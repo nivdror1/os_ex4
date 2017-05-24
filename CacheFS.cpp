@@ -2,6 +2,7 @@
 #include <map>
 #include "CacheFS.h"
 #include "CacheFile.h"
+#include "CacheFS.h"
 #include "Block.h"
 #include <sys/stat.h>
 #include <malloc.h>
@@ -87,7 +88,11 @@ int CacheFS_init(int blocks_num, cache_algo_t cache_algo,
     0 in case of success, negative value in case of failure.
 	The function will fail if a system call or a library function fails.
 */
-int CacheFS_destroy();
+int CacheFS_destroy(){
+    free(copyBuffer);
+    //todo delete the algorithm
+    return 0;
+}
 
 
 /**
