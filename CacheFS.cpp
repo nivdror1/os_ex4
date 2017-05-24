@@ -6,7 +6,7 @@
 #include <sys/stat.h>
 #include <malloc.h>
 
-std::map<int, CacheFile*> openedFile;
+std::map<int, CacheFile*> openedFiles;
 
 void* copyBuffer;
 
@@ -52,11 +52,22 @@ int CacheFS_init(int blocks_num, cache_algo_t cache_algo,
                  double f_old , double f_new  ){
     if (blocks_num <= 0){
         // todo error
+        return -1;
+    }
+    if (cache_algo == cache_algo_t::FBR){
+        if (f_new + f_old > 1 || f_new < 0 || f_old < 0 || f_old > 1 || f_new > 1 ){
+            // todo error
+        }
+        return -1;
     }
     struct stat fi;
     stat("/tmp", &fi);
     blockSize = (size_t)fi.st_blksize;
-    copyBuffer = malloc(blockSize);
+    if ((copyBuffer = malloc(blockSize)) == NULL){
+        //todo error
+        return -1;
+    }
+    return 0;
 }
 
 
