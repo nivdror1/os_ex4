@@ -1,12 +1,14 @@
 #include <stdlib.h>
 #include <map>
+#include "CacheFS.h"
 #include "CacheFile.h"
 #include "Block.h"
 #include <sys/stat.h>
+#include <malloc.h>
 
-std::map<int, CacheFile> openedFile;
+std::map<int, CacheFile*> openedFile;
 
-char* buff;
+void* copyBuffer;
 
 size_t blockSize;
 
@@ -48,9 +50,13 @@ size_t blockSize;
  */
 int CacheFS_init(int blocks_num, cache_algo_t cache_algo,
                  double f_old , double f_new  ){
+    if (blocks_num <= 0){
+        // todo error
+    }
     struct stat fi;
     stat("/tmp", &fi);
     blockSize = (size_t)fi.st_blksize;
+    copyBuffer = malloc(blockSize);
 }
 
 
