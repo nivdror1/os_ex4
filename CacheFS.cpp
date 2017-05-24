@@ -124,7 +124,9 @@ int CacheFS_destroy(){
 			2. Invalid pathname. Pay attention that we support only files under
 			   "/tmp" due to the use of NFS in the Aquarium.
  */
-int CacheFS_open(const char *pathname);
+int CacheFS_open(const char *pathname){
+
+}
 
 
 /**

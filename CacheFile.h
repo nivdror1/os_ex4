@@ -13,7 +13,7 @@
 class CacheFile {
 private:
 	/** a container of the of blocks currently in the cache*/
-	std::vector<Block> fileBlocks;
+	std::map<int,Block> fileBlocks;
 
 	/** the file descriptor*/
 	int fd;
@@ -24,10 +24,9 @@ public:
 	/**
 	 * a c-tor
 	 * @param fd the file descriptor
-	 * @param  firstBlock a block
 	 * @return an object of CacheFile
 	 */
-	CacheFile(int fd,Block firstBlock);
+	CacheFile(int fd);
 
 	/**
 	 * a d-tor
@@ -42,22 +41,23 @@ public:
 
 	/**
 	 * check if a block exists on the cache
-	 * @param offset the offset from the initial bit of the file
+	 * @param blockNumber the number of the block
 	 * @return return true if such block exists else return false
 	 */
-	bool isBlockExists(off_t blockOffset);
+	bool isBlockExists(int blockNumber);
 
 	/**
 	 * remove block from the vector fileBlocks
-	 * @param blockOffset the offset from the initial bit of the file
+	 * @param blockNumber the number of the block
 	 */
-	void removeBlock(off_t blockOffset);
+	bool removeBlock(int blockNumber);
 
 	/**
 	 * append a block to the vector fileBlocks
 	 * @param block a new block to be appended to the vector
+	 * @param blockNumber the number of the block
 	 */
-	void appendBlock(Block block);
+	void appendBlock(Block block, int blockNumber);
 
 };
 

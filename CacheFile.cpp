@@ -8,13 +8,9 @@
 /**
  * a c-tor
  * @param fd the file descriptor
- * @param firstBlock a block
  * @return an object of CacheFile
  */
-CacheFile::CacheFile(int fd,Block firstBlock):fd(fd){
-	appendBlock(firstBlock);
-
-}
+CacheFile::CacheFile(int fd):fd(fd){}
 
 /**
  * a d-tor
@@ -35,20 +31,31 @@ int CacheFile::getFd(){
 
 /**
  * check if a block exists on the cache
- * @param offset the offset from the initial bit of the file
+ * @param blockNumber the number of the block
  * @return return true if such block exists else return false
  */
-bool CacheFile::isBlockExists(off_t blockOffset){
-
+bool CacheFile::isBlockExists(int blockNumber){
+	auto it=fileBlocks.find(blockNumber);
+	return it != fileBlocks.end();
 }
 
 /**
  * remove block from the vector fileBlocks
- * @param blockOffset the offset from the initial bit of the file
+ * @param blockNumber the number of the block
  */
-void removeBlock(off_t blockOffset);
+bool CacheFile::removeBlock(int blockNumber){
+	auto it=fileBlocks.find(blockNumber);
+	if(it != fileBlocks.end()){
+		fileBlocks.erase(blockNumber);
+		return true;
+	}
+	return false;
+}
 
 /**
  * append a block to the vector fileBlocks
+ * @param blockNumber the number of the block
  */
-void appendBlock(off_t blockOffset);
+void CacheFile::appendBlock(Block block,int blockNumber){
+	fileBlocks.insert(std::make_pair(blockNumber,block));
+}
