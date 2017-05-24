@@ -44,8 +44,11 @@ bool CacheFile::isBlockExists(int blockNumber){
  * @param blockNumber the number of the block
  */
 bool CacheFile::removeBlock(int blockNumber){
+	//search for the block
 	auto it=fileBlocks.find(blockNumber);
 	if(it != fileBlocks.end()){
+		//delete the block and erase it the cachefile
+		delete fileBlocks.at(blockNumber);
 		fileBlocks.erase(blockNumber);
 		return true;
 	}
