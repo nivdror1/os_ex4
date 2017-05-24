@@ -138,7 +138,9 @@ int CacheFS_open(const char *pathname);
 		2. invalid file_id. file_id is valid if"f it was returned by
 		CacheFS_open, and it is not already closed.
  */
-int CacheFS_close(int file_id);
+int CacheFS_close(int file_id){
+
+}
 
 /** Read data from an open file
 

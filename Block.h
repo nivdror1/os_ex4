@@ -17,8 +17,8 @@ private:
     /** The content of the block. */
     char* _blockInfo;
 
-    /** The relative starting offset of the block. */
-    off_t _blockOffset;
+    /** The relative number of the block withen the file. */
+    unsigned int _blockNumber;
 
     /** Number of references for this block. */
     unsigned int _count;
@@ -34,13 +34,13 @@ public:
      * @param blockOffset The relative starting offset of the block.
      * @param lastReadTime The last time that the block was used.
      */
-    Block(char* blockInfo, off_t blockOffset, time_t lastReadTime);
+    Block(char* blockInfo, size_t blockSize, unsigned int blockNumber, time_t lastReadTime);
 
     /**
-     * Returns the offset of this block.
-     * @return the offset of this block.
+     * Returns the relative number of this block.
+     * @return the relative number of this block.
      */
-    off_t getBlockOffset() const;
+    unsigned int getBlockNumber() const;
 
     /**
      * Returns the offset of this block.

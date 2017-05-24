@@ -10,20 +10,20 @@
  * @param blockOffset The relative starting offset of the block.
  * @param lastReadTime The last time that the block was used.
  */
-Block::Block(char* blockInfo,off_t blockOffset, time_t lastReadTime) : _blockOffset(
-        blockOffset), _count(1), _lastReadTime(lastReadTime)
+Block::Block(char* blockInfo, size_t blockSize, unsigned int blockNumber, time_t lastReadTime) :
+        _blockNumber(blockNumber), _count(1), _lastReadTime(lastReadTime)
 {
     _blockInfo = aligned_alloc(blockSize, blockSize);
     memcpy(_blockInfo, blockInfo, blockSize);
 }
 
 /**
- * Returns the offset of this block.
- * @return the offset of this block.
+ * Returns the relative number of this block.
+ * @return the relative number of this block.
  */
-off_t Block::getBlockOffset() const
+unsigned int Block::getBlockNumber() const
 {
-    return _blockOffset;
+    return _blockNumber;
 }
 
 /**
