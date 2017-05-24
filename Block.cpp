@@ -3,6 +3,7 @@
 //
 
 #include "Block.h"
+#include <cstring>
 
 /**
  * Constructor
