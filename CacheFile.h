@@ -8,6 +8,7 @@
 
 #include "Block.h"
 #include <vector>
+#include <map>
 #include <sys/types.h>
 
 class CacheFile {
