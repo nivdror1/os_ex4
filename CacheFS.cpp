@@ -1,3 +1,14 @@
+#include <stdlib.h>
+#include <map>
+#include "CacheFile.h"
+#include "Block.h"
+#include <sys/stat.h>
+
+std::map<int, CacheFile> openedFile;
+
+char* buff;
+
+size_t blockSize;
 
 /**
  Initializes the CacheFS.
@@ -36,7 +47,11 @@
  50 in the new partition, and the remaining 17 are in the middle partition.
  */
 int CacheFS_init(int blocks_num, cache_algo_t cache_algo,
-                 double f_old , double f_new  );
+                 double f_old , double f_new  ){
+    struct stat fi;
+    stat("/tmp", &fi);
+    blockSize = (size_t)fi.st_blksize;
+}
 
 
 /**
