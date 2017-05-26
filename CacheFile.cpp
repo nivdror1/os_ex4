@@ -8,9 +8,12 @@
 /**
  * a c-tor
  * @param fd the file descriptor
+ * @param absolutePath the absolute path of the file
  * @return an object of CacheFile
  */
-CacheFile::CacheFile(int fd):fd(fd){}
+CacheFile::CacheFile(int fd, char *absolutePath):fd(fd){
+	this->absPath = absolutePath;
+}
 
 /**
  * a d-tor
@@ -19,6 +22,7 @@ CacheFile::~CacheFile(){
 	for(unsigned int i = 0; i< this->fileBlocks.size();i++){
 		delete(fileBlocks.at(i));
 	}
+	//todo free the absPath? char* -> std::string
 }
 
 /**

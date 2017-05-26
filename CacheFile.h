@@ -19,15 +19,18 @@ private:
 	/** the file descriptor*/
 	int fd;
 
+    /** the absolute path of the file*/
+	std::string absPath;
 
 public:
 
 	/**
 	 * a c-tor
 	 * @param fd the file descriptor
+	 * @param absolutePath the absolute path of the file
 	 * @return an object of CacheFile
 	 */
-	CacheFile(int fd);
+	CacheFile(int fd,char *absolutePath);
 
 	/**
 	 * a d-tor

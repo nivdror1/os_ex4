@@ -5,13 +5,48 @@
 #include "CacheFS.h"
 #include "Block.h"
 #include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
 #include <malloc.h>
+#include <fcntl.h>
+
 
 std::map<int, CacheFile*> openedFiles;
 
 void* copyBuffer;
 
 size_t blockSize;
+
+/**
+ * get the absolute path whether it's a regular file or a symbolic link
+ * @param pathname the original pathname - could represent a absolute path/ relative path/ symbolic link
+ * @param resolvedPath the absolute path
+ * @return return 0 and fill the variable resolvedPath upon succession else return -1
+ */
+static int getAbsolutePath(const char *pathname,char *resolvedPath ){
+    struct stat buf;
+    int result = 0;
+    //check if the pathname is a Symbolic link
+    if(lstat(pathname,&buf)!=-1) {
+        if (S_ISLNK(buf.st_mode)) {
+            // get the absolute path from a symbolic link
+            if (readlink(pathname, resolvedPath, 256) == -1) {
+                result--;
+            }
+        } else {
+            //todo do i need to find out whether this is a regular file
+            // get the absolute path from a relative path
+            realpath(pathname, resolvedPath);
+            if (resolvedPath == nullptr) {
+                result--;
+            }
+        }
+    }
+    else{
+        result--;
+    }
+    return result;
+}
 
 /**
  Initializes the CacheFS.
@@ -94,7 +129,6 @@ int CacheFS_destroy(){
     return 0;
 }
 
-
 /**
  File open operation.
  Receives a path for a file, opens it, and returns an id
@@ -125,7 +159,23 @@ int CacheFS_destroy(){
 			   "/tmp" due to the use of NFS in the Aquarium.
  */
 int CacheFS_open(const char *pathname){
-
+    char *resolvedPath= nullptr;
+    //todo do i need to refer to hard link as well?
+    if(getAbsolutePath(pathname,resolvedPath)){
+        int fd =open(resolvedPath,O_RDONLY | O_DIRECT | O_SYNC);
+        if(fd!=-1){
+            try {
+                //create a CacheFile and insert it into the openedFiles map
+                CacheFile *file = new CacheFile(fd, resolvedPath);
+                openedFiles.insert(std::make_pair(fd, file));
+                return fd;
+            }catch(std::bad_alloc& e){}
+        }else{
+            return -1;
+        }
+    }else{
+        return -1;
+    }
 }
 
 
@@ -140,11 +190,10 @@ int CacheFS_open(const char *pathname){
 		2. invalid file_id. file_id is valid if"f it was returned by
 		CacheFS_open, and it is not already closed.
  */
-int CacheFS_close(int file_id){
+int CacheFS_close(int file_id);
 
-}
-
-/** Read data from an open file
+/**
+   Read data from an open file.
 
    Read should return exactly the number of bytes requested except
    on EOF or error. For example, if you receive size=100, offset=0,
@@ -155,13 +204,6 @@ int CacheFS_close(int file_id){
    We decided to implement a function similar to POSIX's pread, with
    the same parameters.
 
-   Pay attention, in pread the offset is valid as long it is
-   a multiplication of the block size.
-   More specifically, pread returns 0 for negative offset
-   and an offset after the end of the file
-   (as long as the the rest of the requirements are fulfilled).
-   You need to preserve this behaviour also in your implementation.
-
  Returned value:
     In case of success:
 		Non negative value represents the number of bytes read.
@@ -171,14 +213,17 @@ int CacheFS_close(int file_id){
 		Negative number.
 		A failure will occur if:
 			1. a system call or a library function fails (e.g. pread).
-			2. invalid parameters.
+			2. invalid parameters
 				a. file_id is valid if"f it was returned by
 			       CacheFS_open, and it wasn't already closed.
-				b. buf is valid if"f it's not NULL.
-				[any value of count and offset is valid]
+				b. buf is invalid if it is NULL.
+				c. offset is invalid if it's negative
+				   [Note: offset after the end of the file is valid.
+				    In this case, you need to return zero,
+				    like posix's pread does.]
+				[Note: any value of count is valid.]
  */
 int CacheFS_pread(int file_id, void *buf, size_t count, off_t offset);
-
 
 /**
 This function writes the current state of the cache to a file.

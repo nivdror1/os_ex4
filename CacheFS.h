@@ -4,6 +4,9 @@
  *  Author: Netanel Zakay, Operating Systems course 2016-2017, HUJI
  */
 
+#ifndef CACHEFS_H
+#define CACHEFS_H
+
 // This enum represents a cache algorithm.
 // The possible values are all the cache algorithms that the library supports.
 enum cache_algo_t{
@@ -49,7 +52,7 @@ enum cache_algo_t{
  50 in the new partition, and the remaining 17 are in the middle partition.
  */
 int CacheFS_init(int blocks_num, cache_algo_t cache_algo,
-                 double f_old , double f_new  );
+				 double f_old , double f_new  );
 
 
 /**
@@ -116,7 +119,8 @@ int CacheFS_open(const char *pathname);
  */
 int CacheFS_close(int file_id);
 
-/** Read data from an open file
+/**
+   Read data from an open file.
 
    Read should return exactly the number of bytes requested except
    on EOF or error. For example, if you receive size=100, offset=0,
@@ -127,13 +131,6 @@ int CacheFS_close(int file_id);
    We decided to implement a function similar to POSIX's pread, with
    the same parameters.
 
-   Pay attention, in pread the offset is valid as long it is
-   a multiplication of the block size.
-   More specifically, pread returns 0 for negative offset
-   and an offset after the end of the file
-   (as long as the the rest of the requirements are fulfilled).
-   You need to preserve this behaviour also in your implementation.
-
  Returned value:
     In case of success:
 		Non negative value represents the number of bytes read.
@@ -143,11 +140,15 @@ int CacheFS_close(int file_id);
 		Negative number.
 		A failure will occur if:
 			1. a system call or a library function fails (e.g. pread).
-			2. invalid parameters.
+			2. invalid parameters
 				a. file_id is valid if"f it was returned by
 			       CacheFS_open, and it wasn't already closed.
-				b. buf is valid if"f it's not NULL.
-				[any value of count and offset is valid]
+				b. buf is invalid if it is NULL.
+				c. offset is invalid if it's negative
+				   [Note: offset after the end of the file is valid.
+				    In this case, you need to return zero,
+				    like posix's pread does.]
+				[Note: any value of count is valid.]
  */
 int CacheFS_pread(int file_id, void *buf, size_t count, off_t offset);
 
@@ -221,3 +222,5 @@ Notes:
 		2. log_path is invalid.
  */
 int CacheFS_print_stat (const char *log_path);
+
+#endif //CACHEFS_H
