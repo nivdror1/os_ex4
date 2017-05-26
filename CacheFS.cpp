@@ -49,6 +49,22 @@ static int getAbsolutePath(const char *pathname,char *resolvedPath ){
 }
 
 /**
+ * create a CacheFile and insert it into the openedFiles map
+ * @param fd the file description
+ * @param resolvedPath the absolute path
+ * @return upon succession return the fd else return -1
+ */
+static int appendAFile(const int fd, char *resolvedPath){
+    try {
+        //create a CacheFile and insert it into the openedFiles map
+        CacheFile *file = new CacheFile(fd, resolvedPath);
+        openedFiles.insert(std::make_pair(fd, file));
+        return fd;
+    }catch(std::bad_alloc& e){
+        return -1;
+    }
+}
+/**
  Initializes the CacheFS.
  Assumptions:
 	1. CacheFS_init will be called before any other function.
@@ -164,12 +180,7 @@ int CacheFS_open(const char *pathname){
     if(getAbsolutePath(pathname,resolvedPath)){
         int fd =open(resolvedPath,O_RDONLY | O_DIRECT | O_SYNC);
         if(fd!=-1){
-            try {
-                //create a CacheFile and insert it into the openedFiles map
-                CacheFile *file = new CacheFile(fd, resolvedPath);
-                openedFiles.insert(std::make_pair(fd, file));
-                return fd;
-            }catch(std::bad_alloc& e){}
+            return appendAFile(fd,resolvedPath);
         }else{
             return -1;
         }
@@ -190,7 +201,14 @@ int CacheFS_open(const char *pathname){
 		2. invalid file_id. file_id is valid if"f it was returned by
 		CacheFS_open, and it is not already closed.
  */
-int CacheFS_close(int file_id);
+int CacheFS_close(int file_id){
+    auto searchedFile=openedFiles.find(file_id);
+    if(searchedFile!=openedFiles.end()){
+        //todo we got a major problem here
+    }else{
+        return -1;
+    }
+}
 
 /**
    Read data from an open file.
