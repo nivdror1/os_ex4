@@ -11,13 +11,29 @@ class CacheAlgorithm
 {
 private:
 	/** the cache*/
-	std::map<int, std::vector<Block>> cacheBuffer ;
+	std::map<int, std::vector<Block*>> cacheBuffer ;
 
 	/** number of hits*/
 	int numberOfHits;
 
 	/** number of misses*/
 	int numberOfMisses;
+
+	/**
+	 * search the cache for the block, if found return the block
+	 * @param fd the file descriptor
+	 * @param currentBlockNumber the current block to be read
+	 * @return upon success return the block , else return nullptr
+	 */
+	virtual Block* getBlockFromCache(int fd, int currentBlockNumber);
+
+	/**
+	 * find the minimum block that is saved in the cache in order to remove it
+	 * @return a pair that consist of the fd and the block number
+	 */
+	virtual std::pair<int, int> findMinimum();
+
+
 
 public:
 
