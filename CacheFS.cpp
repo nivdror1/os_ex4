@@ -11,6 +11,8 @@
 #include <malloc.h>
 #include <fcntl.h>
 #include <cstring>
+#include <ios>
+#include <fstream>
 
 
 std::vector<std::pair<int, char *> >openedFiles;
@@ -69,6 +71,34 @@ int isFileCurrentlyOpen(std::string absPath){
 }
 
 /**
+ * check if the path is a actual file
+ * @param path the absolute path
+ * @return return whether the path points at a file
+ */
+int isRegularFile(const char *absPath)
+{
+	struct stat path_stat;
+	if(stat(absPath, &path_stat)!=-1){
+		return S_ISREG(path_stat.st_mode);
+	}
+	return -1;
+}
+
+/**
+ * check if the path is a actual directory
+ * @param path the absolute path
+ * @return return whether the path points at a directory
+ */
+int isDirectory(const char *path) {
+	struct stat statbuf;
+	if (stat(path, &statbuf) != -1) {
+		return S_ISDIR(statbuf.st_mode);
+	}
+	return -1;
+
+}
+
+/**
  * check whether if the file is allready open
  * @param fd the file descriptor
  * @return on success return the location of the fd in the opened files vector, else return -1
@@ -80,6 +110,28 @@ int isFileCurrentlyOpen(int fd){
 		}
 	}
 	return -1;
+}
+
+/**
+ * check if the log file actually exists or it's directory exists
+ * @param log_path the path to the log
+ * @param resolvedPath the abs path
+ * @return return true if the file/directory exists, else return false
+ */
+bool isTheLogFileExists(const char* log_path, char* resolvedPath){
+	if(getAbsolutePath(log_path,resolvedPath)!= -1) {
+		if (isRegularFile(resolvedPath) != -1) {
+			return true;
+		} else {
+			//check if the directory is valid
+			std::string temp= resolvedPath;
+			std::size_t found = temp.find_last_of('/');
+			std::string dir  = temp.substr(0,found+1); //todo it contain the '/'
+
+			return (isDirectory(dir.c_str()) != -1) ;
+		}
+	}
+	return false;
 }
 /**
  Initializes the CacheFS.
@@ -283,8 +335,8 @@ int offsetToBlockNumber(off_t offset){
 int CacheFS_pread(int file_id, void *buf, size_t count, off_t offset){
 	int curIndex=isFileCurrentlyOpen(file_id);
 	int currentBlockNumber = offsetToBlockNumber(offset);
-    int totalBytes=0, currentBlockBytes = 0;
-    void* currentBlockBuffer;
+    int totalBytes = 0, currentBlockBytes = 0;
+    void* currentBlockBuffer = NULL;
 
 	if (curIndex != -1 && buf != NULL && currentBlockNumber >=0){
 
@@ -294,7 +346,7 @@ int CacheFS_pread(int file_id, void *buf, size_t count, off_t offset){
 		if(buffer.st_size < offset){
 			return 0;
 		}
-		while(currentBlockBytes = algorithm->read(file_id, currentBlockNumber, currentBlockBuffer) !=0){
+		while((currentBlockBytes = algorithm->read(file_id, currentBlockNumber, currentBlockBuffer)) !=0){
             currentBlockNumber++;
             memcpy(buf + totalBytes, currentBlockBuffer, (size_t)currentBlockBytes);
             totalBytes += currentBlockBytes;
@@ -303,6 +355,7 @@ int CacheFS_pread(int file_id, void *buf, size_t count, off_t offset){
 	}
 	return -1;
 }
+
 
 /**
 This function writes the current state of the cache to a file.
@@ -313,8 +366,9 @@ Each line contains the following values separated by a single space.
 	2. The number of the block. Pay attention: this is not the number in the cache,
 	   but the enumeration within the file itself, starting with 0 for the first
 	   block in each file.
-The order of the entries is from the last block that will be evicted from the cache
+For LRU and LFU The order of the entries is from the last block that will be evicted from the cache
 to the first (next) block that will be evicted.
+For FBR use the LRU order (the order of the stack).
 
 Notes:
 	1. If log_path is a path to existed file - the function will append the cache
@@ -338,7 +392,30 @@ Notes:
 		1. system call or library function fails (e.g. open, write).
 		2. log_path is invalid.
  */
-int CacheFS_print_cache (const char *log_path);
+int CacheFS_print_cache (const char *log_path){
+	char* resolvedPath = NULL;
+	if(isTheLogFileExists(log_path,resolvedPath)!= -1) {
+		//create the ofstream
+		std::ofstream logFile;
+		logFile.exceptions(std::ofstream::failbit | std::ofstream::badbit);
+		try {
+			//open the log file in order to be written
+			logFile.open(resolvedPath, std::ofstream::app);
+			// receiving a vector that contains the absPath and
+			// the number of the block by the order of the algorithm
+			auto cacheBlocks = algorithm->sortCache(); //todo change ,create an data structure in LRU,LFU,FBR to perform find min,remove, printCache
+			//print the cache info
+			for (unsigned int i = 0; i < cacheBlocks.size(); i++) {
+				logFile << cacheBlocks.at(i).first << " " << cacheBlocks.at(i).second<<std::endl;
+			}
+			logFile.close();
+			return 0;
+		} catch (std::ofstream::failure e) {
+			return -1;
+		}
+	}
+	return -1;
+}
 
 
 /**
@@ -372,4 +449,24 @@ Notes:
 		1. system call or library function fails (e.g. open, write).
 		2. log_path is invalid.
  */
-int CacheFS_print_stat (const char *log_path);
+int CacheFS_print_stat (const char *log_path){
+	char* resolvedPath = NULL;
+	if(isTheLogFileExists(log_path,resolvedPath)!= -1) {
+		//create the ofstream
+		std::ofstream logFile;
+		logFile.exceptions(std::ofstream::failbit | std::ofstream::badbit);
+		try {
+			//open the log file in order to be written
+			logFile.open(resolvedPath, std::ofstream::app);
+
+			logFile<< "Hits number: "<< algorithm->getNumberOfHits()<<std::endl;
+			logFile<< "Misses number: " << algorithm->getNumberOfMisses();
+
+			logFile.close();
+			return 0;
+		} catch (std::ofstream::failure e) {
+			return -1;
+		}
+	}
+	return -1;
+}

@@ -52,7 +52,27 @@ public:
 	 */
 	virtual int read(int fd,int currentBlockNumber, void* currentBlockBuffer);
 
+	/**
+	 * sort the cache into a vector of block
+	 * @return a vector of all the blocks in the cache
+	 */
+	virtual std::vector<std::pair<char*,int>> sortCache(); //todo change the name
 
+	/**
+	 * get the number of hits
+	 * @return return the number of hits
+	 */
+	int getNumberOfHits(){
+		return this->numberOfHits;
+	}
+
+	/**
+	 * get the number of misses
+	 * @return return the number of misses
+	 */
+	int getNumberOfMisses(){
+		return this->numberOfMisses;
+	}
 };
 
 
