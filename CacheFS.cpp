@@ -237,6 +237,11 @@ int CacheFS_close(int file_id){
 	return -1;
 }
 
+/**
+ * Converts given offset to number of block in file
+ * @param offset the offset to convert
+ * @return matching block number
+ */
 int offsetToBlockNumber(off_t offset){
     if (offset < 0) {
         return -1;
@@ -278,7 +283,8 @@ int offsetToBlockNumber(off_t offset){
 int CacheFS_pread(int file_id, void *buf, size_t count, off_t offset){
 	int curIndex=isFileCurrentlyOpen(file_id);
 	int currentBlockNumber = offsetToBlockNumber(offset);
-    int totalBytes=0;
+    int totalBytes=0, currentBlockBytes = 0;
+    void* currentBlockBuffer;
 
 	if (curIndex != -1 && buf != NULL && currentBlockNumber >=0){
 
@@ -288,12 +294,12 @@ int CacheFS_pread(int file_id, void *buf, size_t count, off_t offset){
 		if(buffer.st_size < offset){
 			return 0;
 		}
-		while(numberOfBytesPerBlock = algorithm->read(file_id, currentBlockNumber) !=0){
+		while(currentBlockBytes = algorithm->read(file_id, currentBlockNumber, currentBlockBuffer) !=0){
             currentBlockNumber++;
-            size_t len = strlen(l->db.param_value.val);
-            memcpy(g->db_cmd, l->db.param_value.val, len);
-            memcpy(g->db_cmd + len, l->del_const, strlen(l->del_cost)+1);
+            memcpy(buf + totalBytes, currentBlockBuffer, (size_t)currentBlockBytes);
+            totalBytes += currentBlockBytes;
 		}
+        return totalBytes;
 	}
 	return -1;
 }
