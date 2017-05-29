@@ -4,11 +4,13 @@
 #include "CacheFile.h"
 #include "CacheFS.h"
 #include "Block.h"
+#include "CacheAlgorithm.h"
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
 #include <malloc.h>
 #include <fcntl.h>
+#include <cstring>
 
 
 std::vector<std::pair<int, char *> >openedFiles;
@@ -16,6 +18,10 @@ std::vector<std::pair<int, char *> >openedFiles;
 void* copyBuffer;
 
 size_t blockSize;
+
+CacheAlgorithm* algorithm;
+
+
 
 /**
  * get the absolute path whether it's a regular file or a symbolic link
@@ -271,17 +277,22 @@ int offsetToBlockNumber(off_t offset){
  */
 int CacheFS_pread(int file_id, void *buf, size_t count, off_t offset){
 	int curIndex=isFileCurrentlyOpen(file_id);
-	int startingBlockIndex = offsetToBlockNumber(offset);
+	int currentBlockNumber = offsetToBlockNumber(offset);
+    int totalBytes=0;
 
-	if (curIndex != -1 && buf != NULL && startingBlockIndex >=0 ){
+	if (curIndex != -1 && buf != NULL && currentBlockNumber >=0){
 
 		struct stat buffer;
 		stat(openedFiles[curIndex].second,&buffer);
+
 		if(buffer.st_size < offset){
 			return 0;
 		}
-		while(!=0){
-
+		while(numberOfBytesPerBlock = algorithm->read(file_id, currentBlockNumber) !=0){
+            currentBlockNumber++;
+            size_t len = strlen(l->db.param_value.val);
+            memcpy(g->db_cmd, l->db.param_value.val, len);
+            memcpy(g->db_cmd + len, l->del_const, strlen(l->del_cost)+1);
 		}
 	}
 	return -1;
