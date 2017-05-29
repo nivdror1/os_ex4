@@ -11,7 +11,7 @@
 #include <fcntl.h>
 
 
-std::vector<std::pair<int, std::string> >openedFiles;
+std::vector<std::pair<int, char *> >openedFiles;
 
 void* copyBuffer;
 
@@ -23,7 +23,7 @@ size_t blockSize;
  * @param resolvedPath the absolute path
  * @return return 0 and fill the variable resolvedPath upon succession else return -1
  */
-static int getAbsolutePath(const char *pathname,char *resolvedPath ){
+int getAbsolutePath(const char *pathname,char *resolvedPath ){
     struct stat buf;
     int result = 0;
     //check if the pathname is a Symbolic link
@@ -231,11 +231,11 @@ int CacheFS_close(int file_id){
 	return -1;
 }
 
-int offsetToBlockNumber(int offset){
+int offsetToBlockNumber(off_t offset){
     if (offset < 0) {
         return -1;
     }
-    return offset/(int)blockSize;
+    return (int)(offset/blockSize);
 }
 
 /**
@@ -269,7 +269,23 @@ int offsetToBlockNumber(int offset){
 				    like posix's pread does.]
 				[Note: any value of count is valid.]
  */
-int CacheFS_pread(int file_id, void *buf, size_t count, off_t offset);
+int CacheFS_pread(int file_id, void *buf, size_t count, off_t offset){
+	int curIndex=isFileCurrentlyOpen(file_id);
+	int startingBlockIndex = offsetToBlockNumber(offset);
+
+	if (curIndex != -1 && buf != NULL && startingBlockIndex >=0 ){
+
+		struct stat buffer;
+		stat(openedFiles[curIndex].second,&buffer);
+		if(buffer.st_size < offset){
+			return 0;
+		}
+		while(!=0){
+
+		}
+	}
+	return -1;
+}
 
 /**
 This function writes the current state of the cache to a file.
