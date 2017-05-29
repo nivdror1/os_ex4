@@ -6,7 +6,9 @@
 #define OS_EX4_LFU_H
 
 
-class LFU {
+class LFU: public CacheAlgorithm {
+
+
 
 };
 
