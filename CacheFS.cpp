@@ -231,6 +231,13 @@ int CacheFS_close(int file_id){
 	return -1;
 }
 
+int offsetToBlockNumber(int offset){
+    if (offset < 0) {
+        return -1;
+    }
+    return offset/(int)blockSize;
+}
+
 /**
    Read data from an open file.
 
