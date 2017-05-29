@@ -11,7 +11,7 @@
 #include <fcntl.h>
 
 
-std::map<int, CacheFile*> openedFiles;
+std::vector<std::pair<int, std::string> >openedFiles;
 
 void* copyBuffer;
 
@@ -49,20 +49,31 @@ static int getAbsolutePath(const char *pathname,char *resolvedPath ){
 }
 
 /**
- * create a CacheFile and insert it into the openedFiles map
- * @param fd the file description
- * @param resolvedPath the absolute path
- * @return upon succession return the fd else return -1
+ * check whether if the file is allready open
+ * @param absPath the absolute path
+ * @return on success return the fd else return -1
  */
-static int appendAFile(const int fd, char *resolvedPath){
-    try {
-        //create a CacheFile and insert it into the openedFiles map
-        CacheFile *file = new CacheFile(fd, resolvedPath);
-        openedFiles.insert(std::make_pair(fd, file));
-        return fd;
-    }catch(std::bad_alloc& e){
-        return -1;
-    }
+int isFileCurrentlyOpen(std::string absPath){
+	for(unsigned int i=0;i<openedFiles.size();i++){
+		if(absPath==openedFiles.at(i).second){
+			return openedFiles.at(i).first;
+		}
+	}
+	return -1;
+}
+
+/**
+ * check whether if the file is allready open
+ * @param fd the file descriptor
+ * @return on success return the location of the fd in the opened files vector, else return -1
+ */
+int isFileCurrentlyOpen(int fd){
+	for(unsigned int i=0;i<openedFiles.size();i++){
+		if(fd==openedFiles.at(i).first){
+			return i;
+		}
+	}
+	return -1;
 }
 /**
  Initializes the CacheFS.
@@ -176,14 +187,21 @@ int CacheFS_destroy(){
  */
 int CacheFS_open(const char *pathname){
     char *resolvedPath= nullptr;
-    //todo do i need to refer to hard link as well?
+	int fd,curFile;
+    //todo check if the pathname is \tmp something
+	//get the absolute path
     if(getAbsolutePath(pathname,resolvedPath)){
-        int fd =open(resolvedPath,O_RDONLY | O_DIRECT | O_SYNC);
-        if(fd!=-1){
-            return appendAFile(fd,resolvedPath);
-        }else{
-            return -1;
-        }
+	    //check if the file is already open
+	    curFile = isFileCurrentlyOpen(resolvedPath);
+	    if(curFile == -1){
+		    //open the file and append the fd and the absPath to the openedFiles vector
+		    fd = open(resolvedPath,O_RDONLY | O_DIRECT | O_SYNC);
+		    if(fd !=-1) {
+			    openedFiles.push_back(std::make_pair(fd, resolvedPath));
+		    }
+		    return fd;
+	    }
+	    return curFile;
     }else{
         return -1;
     }
@@ -202,12 +220,15 @@ int CacheFS_open(const char *pathname){
 		CacheFS_open, and it is not already closed.
  */
 int CacheFS_close(int file_id){
-    auto searchedFile=openedFiles.find(file_id);
-    if(searchedFile!=openedFiles.end()){
-        //todo we got a major problem here
-    }else{
-        return -1;
-    }
+	//check if the file is already open
+    int curFile = isFileCurrentlyOpen(file_id);
+	if(curFile!=-1){
+		//close the file and remove it from the openedFiles vector
+		close(file_id);
+		openedFiles.erase(openedFiles.begin()+curFile);
+		return 0;
+	}
+	return -1;
 }
 
 /**
