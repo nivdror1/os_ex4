@@ -14,7 +14,7 @@
 Block::Block(char* blockInfo, size_t blockSize, unsigned int blockNumber, time_t lastReadTime) :
         _blockNumber(blockNumber), _count(1), _lastReadTime(lastReadTime)
 {
-    _blockInfo = aligned_alloc(blockSize, blockSize);
+    _blockInfo =(char*) aligned_alloc(blockSize, blockSize);
     memcpy(_blockInfo, blockInfo, blockSize);
 }
 
