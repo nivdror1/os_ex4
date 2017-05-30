@@ -10,14 +10,23 @@
 class CacheAlgorithm
 {
 private:
-	/** the cache*/
-	std::map<int, std::vector<Block*>> cacheBuffer ;
+
 
 	/** number of hits*/
 	int numberOfHits;
 
 	/** number of misses*/
 	int numberOfMisses;
+
+    /** number of blocks in the cache*/
+    int numberOfBlocks;
+
+
+    /**
+	 * find the minimum block that is saved in the cache in order to remove it
+	 * @return a pair that consist of the fd and the block number
+	 */
+    virtual std::pair<int, int> findMinimum();
 
 	/**
 	 * search the cache for the block, if found return the block
@@ -27,11 +36,7 @@ private:
 	 */
 	virtual Block* getBlockFromCache(int fd, int currentBlockNumber);
 
-	/**
-	 * find the minimum block that is saved in the cache in order to remove it
-	 * @return a pair that consist of the fd and the block number
-	 */
-	virtual std::pair<int, int> findMinimum();
+
 
 
 
@@ -41,6 +46,34 @@ public:
 	 * d-tor
 	 */
 	virtual ~CacheAlgorithm();
+
+	/**
+	 * get the number of hits
+	 * @return return the number of hits
+	 */
+	int getNumberOfHits();
+
+	/**
+	 * get the number of misses
+	 * @return return the number of misses
+	 */
+	int getNumberOfMisses();
+
+    /**
+	 * get the number of blocks in the cache
+	 * @return return the number of blocks in the cache
+	 */
+    int getNumberOfBlocks();
+
+	/**
+	 * increment the number of hits
+	 */
+	void incrementNumberOfHits();
+
+	/**
+	 * increment the number of misses
+	 */
+	 void incrementNumberOfMisses();
 
 	/**
 	 * search for the block in the cache, if the block is in the cache read from it
@@ -58,21 +91,7 @@ public:
 	 */
 	virtual std::vector<std::pair<char*,int>> sortCache(); //todo change the name
 
-	/**
-	 * get the number of hits
-	 * @return return the number of hits
-	 */
-	int getNumberOfHits(){
-		return this->numberOfHits;
-	}
 
-	/**
-	 * get the number of misses
-	 * @return return the number of misses
-	 */
-	int getNumberOfMisses(){
-		return this->numberOfMisses;
-	}
 };
 
 
