@@ -114,20 +114,24 @@ int isFileCurrentlyOpen(int fd){
 }
 
 /**
- * check if the log file actually exists or it's directory exists
- * @param log_path the path to the log
+ * check if the path exists
+ * @param path the path to the file
  * @param resolvedPath the abs path
+ * @param flag true if trying to open file from disc, false if trying to open log file
  * @return return true if the file/directory exists, else return false
  */
-bool isTheLogFileExists(const char* log_path, char* resolvedPath){
-	if(getAbsolutePath(log_path,resolvedPath)!= -1) {
+bool isPathValid(const char *path, char *resolvedPath, bool flag){
+	if(getAbsolutePath(path,resolvedPath) != -1) {
 		if (isRegularFile(resolvedPath) != -1) {
 			return true;
 		} else {
 			//check if the directory is valid
-			std::string temp= resolvedPath;
+			std::string temp = resolvedPath;
 			std::size_t found = temp.find_last_of('/');
 			std::string dir  = temp.substr(0,found+1); //todo it contain the '/'
+            if (flag && temp.find("/tmp/") == std::string::npos){
+                return false;
+            }
 
 			return (isDirectory(dir.c_str()) != -1) ;
 		}
@@ -251,9 +255,8 @@ int CacheFS_destroy(){
 int CacheFS_open(const char *pathname){
     char *resolvedPath= nullptr;
 	int fd,curFile;
-    //todo check if the pathname is \tmp something
-	//get the absolute path
-    if(getAbsolutePath(pathname,resolvedPath)){
+	//get the absolute path and check if the file is in tmp directory
+    if(isPathValid(pathname, resolvedPath, true) != -1){
 	    //check if the file is already open
 	    curFile = isFileCurrentlyOpen(resolvedPath);
 	    if(curFile == -1){
@@ -401,7 +404,7 @@ Notes:
  */
 int CacheFS_print_cache (const char *log_path){
 	char* resolvedPath = NULL;
-	if(isTheLogFileExists(log_path,resolvedPath)!= -1) {
+	if(isPathValid(log_path, resolvedPath, false)!= -1) {
 		//create the ofstream
 		std::ofstream logFile;
 		logFile.exceptions(std::ofstream::failbit | std::ofstream::badbit);
@@ -460,7 +463,7 @@ Notes:
  */
 int CacheFS_print_stat (const char *log_path){
 	char* resolvedPath = NULL;
-	if(isTheLogFileExists(log_path,resolvedPath)!= -1) {
+	if(isPathValid(log_path, resolvedPath, false)!= -1) {
 		//create the ofstream
 		std::ofstream logFile;
 		logFile.exceptions(std::ofstream::failbit | std::ofstream::badbit);
