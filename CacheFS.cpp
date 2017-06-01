@@ -5,6 +5,7 @@
 #include "CacheFS.h"
 #include "Block.h"
 #include "CacheAlgorithm.h"
+#include "LRU.h"
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -175,19 +176,23 @@ int CacheFS_init(int blocks_num, cache_algo_t cache_algo,
         // todo error
         return -1;
     }
+	struct stat fi;
+	stat("/tmp", &fi);
+	blockSize = (size_t)fi.st_blksize;
+	if ((copyBuffer = malloc(blockSize)) == NULL){
+		//todo error
+		return -1;
+	}
     if (cache_algo == cache_algo_t::FBR){
         if (f_new + f_old > 1 || f_new < 0 || f_old < 0 || f_old > 1 || f_new > 1 ){
             // todo error
+	        return -1;
         }
-        return -1;
     }
-    struct stat fi;
-    stat("/tmp", &fi);
-    blockSize = (size_t)fi.st_blksize;
-    if ((copyBuffer = malloc(blockSize)) == NULL){
-        //todo error
-        return -1;
-    }
+	if(cache_algo==LRU){
+		algorithm = new LRU(blocks_num, blockSize);
+	}
+
     return 0;
 }
 
@@ -335,7 +340,7 @@ int offsetToBlockNumber(off_t offset){
 int CacheFS_pread(int file_id, void *buf, size_t count, off_t offset){
 	int curIndex=isFileCurrentlyOpen(file_id);
 	int currentBlockNumber = offsetToBlockNumber(offset);
-    int totalBytes = 0, currentBlockBytes = 0;
+    size_t totalBytes = 0, currentBlockBytes = 0;
     void* currentBlockBuffer = NULL;
 
 	if (curIndex != -1 && buf != NULL && currentBlockNumber >=0){
@@ -346,12 +351,14 @@ int CacheFS_pread(int file_id, void *buf, size_t count, off_t offset){
 		if(buffer.st_size < offset){
 			return 0;
 		}
-		while((currentBlockBytes = algorithm->read(file_id, currentBlockNumber, currentBlockBuffer)) !=0){
+		while(count !=0){
+			currentBlockBytes = algorithm->read(file_id, currentBlockNumber, currentBlockBuffer,count,offset+totalBytes);
             currentBlockNumber++;
             memcpy(buf + totalBytes, currentBlockBuffer, (size_t)currentBlockBytes);
             totalBytes += currentBlockBytes;
+			count-= currentBlockBytes;
 		}
-        return totalBytes;
+        return (int)totalBytes;
 	}
 	return -1;
 }

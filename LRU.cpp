@@ -1,19 +1,16 @@
 #include "LRU.h"
 #include <algorithm>
+#include <zconf.h>
+#include <cstring>
+#include <sys/time.h>
 
 /**
  * c-tor
  * @param blocks_num the number of blocks in the cache* get the map of the cache buffer
+ * @param blockSize the block size
  **/
-LRU::LRU(int blocks_num): numberOfBlocks(blocks_num){}
+LRU::LRU(int blocks_num, size_t blockSize): numberOfBlocks(blocks_num),blockSize(blockSize){}
 
-/**
- * get the map of the cache buffer
- * @return the cache buffer
- */
-std::map<std::pair<int,int> ,Block*,LRU > LRU::getCacheBuffer(){
-    return this->cacheBuffer;
-}
 
 /**
 * a functor whom compares the cache map by first comparing the fd
@@ -30,24 +27,28 @@ bool LRU::operator()(const std::pair<int,int> key , const std::pair<int,int>  ot
 /**
  * compare the time of two blocks in the cache,
  * this comparison simulates the process of the LRU
- * @param time the time of which the first block was last read
- * @param otherTime the time of which the second block was last read
+ * @param firstBlock a block id
+ * @param secondBlock a block id
  * @return true if time> otherTime else return false
  */
-bool LRU::compare(const time_t time, const  time_t otherTime) const {
-    if (difftime(time,otherTime)> 0){
-        return true;
-    }
-    return false;
+bool LRU::compare(const std::pair<int,int> firstBlock, const std::pair<int,int> secondBlock ) const {
+	time_t firstTime = getBlockFromCache(firstBlock.first,firstBlock.second)->getLastReadTime();
+	time_t secondTime = getBlockFromCache(secondBlock.first,secondBlock.second)->getLastReadTime();
+	return difftime(firstTime, secondTime) > 0;
 }
 /**
  * find the minimum block that is saved in the cache in order to remove it
  * @return a pair that consist of the fd and the block number
  */
- std::pair<int, int> LRU::findMinimum(){
-    auto min = std::min_element(cacheBuffer.begin(),cacheBuffer.end(),&compare);
-    //todo check whether min_element function has failed
-    getCacheBuffer().erase(min);
+ void LRU::eraseMinimum(){
+	BLOCK_ID curBlock =orderedCache.front();
+	//search and delete it from the cache map
+	auto searchedBlock = cacheBuffer.find(std::make_pair(curBlock.first,curBlock.second));
+	if(searchedBlock!=cacheBuffer.end()){
+		 delete searchedBlock->second;
+	}
+	//remove from the ordered cache list
+	orderedCache.pop_front();
 
 };
 
@@ -58,19 +59,55 @@ bool LRU::compare(const time_t time, const  time_t otherTime) const {
  * @param currentBlockNumber the current block to be read
  * @return upon success return the block , else return nullptr
  */
-Block* LRU::getBlockFromCache(int fd, int currentBlockNumber){
+Block* LRU::getBlockFromCache(int fd, int currentBlockNumber) const{
     auto searchedBlock = cacheBuffer.find(std::make_pair(fd,currentBlockNumber));
     if(searchedBlock!=cacheBuffer.end()){
-        incrementNumberOfHits();
         return searchedBlock->second;
-    }else{
-        if(cacheBuffer.size()==getNumberOfBlocks()){
-            findMinimum();
-        }
-        incrementNumberOfMisses();
-        //todo read the block
     }
+	return nullptr;
 
 }
 
+/**
+ * search for the block in the cache, if the block is in the cache read from it
+ * else, remove a block from the cache, and read the block from the disk
+ * @param fd the file descriptorgetCacheBuffer()
+ * @param currentBlockNumber the current block to be read
+ * @param currentBlockBuffer the current buffer
+ * @return the number of bytes read
+ */
+size_t LRU::read(int fd,int currentBlockNumber, void* currentBlockBuffer,size_t count, size_t offset){
+
+	BLOCK_ID currentBlockId =std::make_pair(fd,currentBlockNumber);
+	Block * block= getBlockFromCache(fd,currentBlockNumber);
+	if(block!= nullptr){
+		//move the block id to end of the list
+
+		auto searchedBlockId = std::find(orderedCache.begin(),
+		                                 orderedCache.end(),currentBlockId);
+		orderedCache.erase(searchedBlockId);
+		orderedCache.push_back(currentBlockId);
+
+		incrementNumberOfHits();
+		if(count> blockSize){
+			memcpy(currentBlockBuffer, block, blockSize);
+			return blockSize;
+		}
+		memcpy(currentBlockBuffer, block, count);
+		return count;
+	}
+	if(cacheBuffer.size()==getNumberOfBlocks()){
+		eraseMinimum();
+	}
+	incrementNumberOfMisses();
+	//todo read the block
+	void* tempBuffer = nullptr;
+	pread(fd,tempBuffer,this->blockSize,offset);
+	try {
+		block = new Block(tempBuffer,blockSize,currentBlockNumber);
+	}catch (std::bad_alloc e){
+		//todo error maybe throw exception
+	}
+	cacheBuffer.insert(currentBlockId,tempBuffer);
+}
 

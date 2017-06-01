@@ -8,46 +8,48 @@
 #include "Block.h"
 #include "CacheAlgorithm.h"
 #include <map>
+#include <list>
+
+typedef std::pair<int,int> BLOCK_ID;
 
 class LRU: public CacheAlgorithm {
 
 private:
     /** the cache */
-    std::map<std::pair<int,int> ,Block*,LRU > cacheBuffer ; //todo not sure about the map definition
-
+    std::map<BLOCK_ID,Block*,LRU > cacheBuffer ; //todo not sure about the map definition
+	/**
+	 * a vector of BLOCK_ID that sorted
+	 */
+	std::list<BLOCK_ID> orderedCache;
 
 public:
     /**
      * c-tor
      * @param blocks_num the number of blocks in the cache
+     * @param blockSize the block size
      */
-    LRU(int blocks_num);
+    LRU(int blocks_num,size_t blockSize);
 
-    /**
-     * get the map of the cache buffer
-     * @return the cache buffer
-     */
-    std::map<std::pair<int,int> ,Block* ,LRU> getCacheBuffer();
 
     /**
     * a functor whom compares the cache map by the operator <
     */
-    bool operator()(const std::pair<int,int> key , const std::pair<int,int>  otherKey) const;
+    bool operator()(const BLOCK_ID key , const BLOCK_ID otherKey) const;
 
     /**
      * compare the time of two blocks in the cache,
      * this comparison simulates the process of the LRU
-     * @param time the time of which the first block was last read
-     * @param otherTime the time of which the second block was last read
+     * @param firstBlock a block id
+     * @param secondBlock a block id
      * @return true if time> otherTime else return false
      */
-    bool compare(const time_t time, const  time_t otherTime) const ;
+    bool compare(const BLOCK_ID firstBlock, const BLOCK_ID secondBlock) const ;
 
     /**
 	* find the minimum block that is saved in the cache in order to remove it
 	* @return a pair that consist of the fd and the block number
 	*/
-    virtual std::pair<int, int> findMinimum();
+    void eraseMinimum();
 
     /**
 	 * search the cache for the block, if found return the block
@@ -55,7 +57,19 @@ public:
 	 * @param currentBlockNumber the current block to be read
 	 * @return upon success return the block , else return nullptr
 	 */
-    virtual Block* getBlockFromCache(int fd, int currentBlockNumber);
+     Block* getBlockFromCache(int fd, int currentBlockNumber) const;
+
+	/**
+	 * search for the block in the cache, if the block is in the cache read from it
+	 * else, remove a block from the cache, and read the block from the disk
+	 * @param fd the file descriptorgetCacheBuffer()
+	 * @param currentBlockNumber the current block to be read
+	 * @param currentBlockBuffer the current buffer
+     * @param count the number of bytes to be read
+     * @param offset the offset to begin reading
+	 * @return the number of bytes read
+	 */
+	size_t read(int fd,int currentBlockNumber, void* currentBlockBuffer,size_t count,size_t offset);
 };
 
 #endif //OS_EX4_LRU_H
