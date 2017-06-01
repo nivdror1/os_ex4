@@ -7,6 +7,7 @@
 
 #include "Block.h"
 #include "CacheAlgorithm.h"
+#include <map>
 
 class LRU: public CacheAlgorithm {
 
@@ -26,7 +27,7 @@ public:
      * get the map of the cache buffer
      * @return the cache buffer
      */
-    std::map<std::pair<int,int> ,Block* > getCacheBuffer();
+    std::map<std::pair<int,int> ,Block* ,LRU> getCacheBuffer();
 
     /**
     * a functor whom compares the cache map by the operator <
@@ -42,6 +43,19 @@ public:
      */
     bool compare(const time_t time, const  time_t otherTime) const ;
 
+    /**
+	* find the minimum block that is saved in the cache in order to remove it
+	* @return a pair that consist of the fd and the block number
+	*/
+    virtual std::pair<int, int> findMinimum();
+
+    /**
+	 * search the cache for the block, if found return the block
+	 * @param fd the file descriptor
+	 * @param currentBlockNumber the current block to be read
+	 * @return upon success return the block , else return nullptr
+	 */
+    virtual Block* getBlockFromCache(int fd, int currentBlockNumber);
 };
 
 #endif //OS_EX4_LRU_H

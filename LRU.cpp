@@ -1,5 +1,5 @@
 #include "LRU.h"
-
+#include <algorithm>
 
 /**
  * c-tor
@@ -11,7 +11,7 @@ LRU::LRU(int blocks_num): numberOfBlocks(blocks_num){}
  * get the map of the cache buffer
  * @return the cache buffer
  */
-std::map<std::pair<int,int> ,Block* > LRU::getCacheBuffer(){
+std::map<std::pair<int,int> ,Block*,LRU > LRU::getCacheBuffer(){
     return this->cacheBuffer;
 }
 
@@ -45,7 +45,7 @@ bool LRU::compare(const time_t time, const  time_t otherTime) const {
  * @return a pair that consist of the fd and the block number
  */
  std::pair<int, int> LRU::findMinimum(){
-    auto min = std::min_element(getCacheBuffer().begin(),getCacheBuffer().end(),&compare);
+    auto min = std::min_element(cacheBuffer.begin(),cacheBuffer.end(),&compare);
     //todo check whether min_element function has failed
     getCacheBuffer().erase(min);
 
@@ -58,13 +58,13 @@ bool LRU::compare(const time_t time, const  time_t otherTime) const {
  * @param currentBlockNumber the current block to be read
  * @return upon success return the block , else return nullptr
  */
-Block* CacheAlgorithm::getBlockFromCache(int fd, int currentBlockNumber){
-    auto searchedBlock = getCacheBuffer().find(std::make_pair(fd,currentBlockNumber));
-    if(searchedBlock!=getCacheBuffer().end()){
+Block* LRU::getBlockFromCache(int fd, int currentBlockNumber){
+    auto searchedBlock = cacheBuffer.find(std::make_pair(fd,currentBlockNumber));
+    if(searchedBlock!=cacheBuffer.end()){
         incrementNumberOfHits();
         return searchedBlock->second;
     }else{
-        if(getCacheBuffer().size()==getNumberOfBlocks()){
+        if(cacheBuffer.size()==getNumberOfBlocks()){
             findMinimum();
         }
         incrementNumberOfMisses();
