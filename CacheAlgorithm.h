@@ -46,7 +46,7 @@ protected:
 	 * @param currentBlockNumber the current block to be read
 	 * @return upon success return the block , else return nullptr
 	 */
-	virtual Block* getBlockFromCache(int fd, int currentBlockNumber)=0;
+	virtual Block* getBlockFromCache(int fd, int currentBlockNumber)const =0;
 
 public:
 

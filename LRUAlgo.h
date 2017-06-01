@@ -9,12 +9,25 @@
 #include "CacheAlgorithm.h"
 #include <map>
 
+struct CompareItems{
+	/**
+	* a functor whom compares the cache map by first comparing the fd
+	* and comparing the block number
+	*/
+	bool operator()(const std::pair<int,int> key , const std::pair<int,int>  otherKey) const{
+		if (key.first < otherKey.first){
+			return true;
+		}else{
+			return key.second < otherKey.second;
+		}
+	}
+};
 
-class LRU: public CacheAlgorithm {
+class LRUAlgo: public CacheAlgorithm {
 
 private:
     /** the cache */
-    std::map<BLOCK_ID,Block*> cacheBuffer ; //todo not sure about the map definition
+    std::map<BLOCK_ID,Block*, CompareItems> cacheBuffer ; //todo not sure about the map definition
 	/**
 	 * a vector of BLOCK_ID that sorted
 	 */
@@ -51,18 +64,12 @@ public:
      * @param blocks_num the number of blocks in the cache
      * @param blockSize the block size
      */
-    LRU(int blocks_num,size_t blockSize);
+    LRUAlgo(int blocks_num,size_t blockSize);
 
 	/**
 	 * d-tor
 	 */
-	 ~LRU();
-
-
-    /**
-    * a functor whom compares the cache map by the operator <
-    */
-    bool operator()(const BLOCK_ID key , const BLOCK_ID otherKey) const;
+	 ~LRUAlgo();
 
 
     /**

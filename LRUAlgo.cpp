@@ -1,4 +1,4 @@
-#include "LRU.h"
+#include "LRUAlgo.h"
 #include <algorithm>
 #include <zconf.h>
 #include <cstring>
@@ -10,35 +10,22 @@
  * @param blocks_num the number of blocks in the cache* get the map of the cache buffer
  * @param blockSize the block size
  **/
-LRU::LRU(int blocks_num, size_t Size){
+LRUAlgo::LRUAlgo(int blocks_num, size_t Size){
 	numberOfBlocks= blocks_num;
 	blockSize = Size;
 }
 
-LRU::~LRU(){
+LRUAlgo::~LRUAlgo(){
 	for(auto iter= cacheBuffer.begin();iter!= cacheBuffer.end();iter++){
 		delete (*iter).second;
 	}
-}
-
-
-/**
-* a functor whom compares the cache map by first comparing the fd
-* and comparing the block number
-*/
-bool LRU::operator()(const std::pair<int,int> key , const std::pair<int,int>  otherKey) const{
-    if (key.first < otherKey.first){
-        return true;
-    }else{
-        return key.second < otherKey.second;
-    }
 }
 
 /**
  * find the minimum block that is saved in the cache in order to remove it
  * @return a pair that consist of the fd and the block number
  */
- void LRU::eraseMinimum(){
+ void LRUAlgo::eraseMinimum(){
 	BLOCK_ID curBlock =orderedCache.front();
 	//search and delete it from the cache map
 	auto searchedBlock = cacheBuffer.find(std::make_pair(curBlock.first,curBlock.second));
@@ -57,7 +44,7 @@ bool LRU::operator()(const std::pair<int,int> key , const std::pair<int,int>  ot
  * @param currentBlockNumber the current block to be read
  * @return upon success return the block , else return nullptr
  */
-Block* LRU::getBlockFromCache(int fd, int currentBlockNumber) const{
+Block* LRUAlgo::getBlockFromCache(int fd, int currentBlockNumber) const{
     auto searchedBlock = cacheBuffer.find(std::make_pair(fd,currentBlockNumber));
     if(searchedBlock!=cacheBuffer.end()){
         return searchedBlock->second;
@@ -75,7 +62,7 @@ Block* LRU::getBlockFromCache(int fd, int currentBlockNumber) const{
  * @param offset offset the offset to begin reading
  * @return the number of bytes read
  */
-int LRU::hitCache(BLOCK_ID currentBlockId, size_t count,void* currentBlockBuffer ,Block * block, off_t offset) {
+int LRUAlgo::hitCache(BLOCK_ID currentBlockId, size_t count,void* currentBlockBuffer ,Block * block, off_t offset) {
 	//move the block id to end of the list
 
 	auto searchedBlockId = std::find(orderedCache.begin(),
@@ -98,7 +85,7 @@ int LRU::hitCache(BLOCK_ID currentBlockId, size_t count,void* currentBlockBuffer
  * @param fileInfo a stat object reperesented the file info
  * @return the number of bytes read
  */
-int LRU::missCache(BLOCK_ID currentBlockId ,size_t count ,Block* block,
+int LRUAlgo::missCache(BLOCK_ID currentBlockId ,size_t count ,Block* block,
                    off_t offset,struct stat *fileInfo,void *currentBlockBuffer ){
 	if(cacheBuffer.size()==getNumberOfBlocks()){
 		eraseMinimum();
@@ -129,7 +116,7 @@ int LRU::missCache(BLOCK_ID currentBlockId ,size_t count ,Block* block,
  * @param fileInfo a stat object reperesented the file info
  * @return the number of bytes read
  */
-int LRU::read(int fd,int currentBlockNumber, void* currentBlockBuffer,size_t count, off_t offset, struct stat *fileInfo){
+int LRUAlgo::read(int fd,int currentBlockNumber, void* currentBlockBuffer,size_t count, off_t offset, struct stat *fileInfo){
 
 	BLOCK_ID currentBlockId =std::make_pair(fd,currentBlockNumber);
 	Block * block= getBlockFromCache(fd,currentBlockNumber);
@@ -145,7 +132,7 @@ int LRU::read(int fd,int currentBlockNumber, void* currentBlockBuffer,size_t cou
  * sort the cache into a vector of block
  * @return a vector of all the blocks in the cache
  */
-std::list<BLOCK_ID> LRU::getOrderedCache(){
+std::list<BLOCK_ID> LRUAlgo::getOrderedCache(){
 	return orderedCache;
 }
 

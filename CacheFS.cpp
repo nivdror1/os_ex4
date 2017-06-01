@@ -5,7 +5,7 @@
 #include "CacheFS.h"
 #include "Block.h"
 #include "CacheAlgorithm.h"
-#include "LRU.h"
+#include "LRUAlgo.h"
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -196,7 +196,7 @@ int CacheFS_init(int blocks_num, cache_algo_t cache_algo,
         }
     }
 	if(cache_algo==LRU){
-		algorithm = new LRU(blocks_num, blockSize);
+		algorithm = new LRUAlgo(blocks_num, blockSize);
 	}
 
     return 0;
