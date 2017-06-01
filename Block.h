@@ -20,6 +20,10 @@ private:
     /** Number of references for this block. */
     unsigned int _count;
 
+    int _currentBlockNumber;
+
+    /** Information struct of the file that this block is part of */
+    struct stat *_fileInfo;
 
 public:
 
@@ -27,8 +31,9 @@ public:
      * Constructor
      * @param blockInfo the content of this block
      * @param blockOffset The relative starting offset of the block.
+     * @param fileInfo Information struct of the file that this block is part of
      */
-    Block(void* blockInfo, size_t blockSize);
+    Block(void* blockInfo, size_t blockSize, int currentBlockNumber, struct stat *fileInfo);
 
     /**
      * Returns the offset of this block.
@@ -40,6 +45,8 @@ public:
      * Increment the number of times that this block was used by 1.
      */
     void incrementCount();
+
+    int getPartOfBlockContent(void* buffer, off_t offset, int count);
 
 };
 
