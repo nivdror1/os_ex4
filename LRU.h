@@ -14,7 +14,7 @@ class LRU: public CacheAlgorithm {
 
 private:
     /** the cache */
-    std::map<BLOCK_ID,Block*,LRU() > cacheBuffer ; //todo not sure about the map definition
+    std::map<BLOCK_ID,Block*> cacheBuffer ; //todo not sure about the map definition
 	/**
 	 * a vector of BLOCK_ID that sorted
 	 */

@@ -10,7 +10,10 @@
  * @param blocks_num the number of blocks in the cache* get the map of the cache buffer
  * @param blockSize the block size
  **/
-LRU::LRU(int blocks_num, size_t blockSize): numberOfBlocks(blocks_num),blockSize(blockSize){}
+LRU::LRU(int blocks_num, size_t Size){
+	numberOfBlocks= blocks_num;
+	blockSize = Size;
+}
 
 LRU::~LRU(){
 	for(auto iter= cacheBuffer.begin();iter!= cacheBuffer.end();iter++){
