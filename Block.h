@@ -23,8 +23,6 @@ private:
     /** Number of references for this block. */
     unsigned int _count;
 
-    /** The last time that the block was used. */
-    time_t _lastReadTime;
 
 public:
 
@@ -34,7 +32,7 @@ public:
      * @param blockOffset The relative starting offset of the block.
      * @param lastReadTime The last time that the block was used.
      */
-    Block(char* blockInfo, size_t blockSize, unsigned int blockNumber, time_t lastReadTime);
+    Block(char* blockInfo, size_t blockSize, unsigned int blockNumber);
 
     /**
      * Returns the relative number of this block.

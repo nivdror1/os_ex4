@@ -5,9 +5,7 @@
 #ifndef OS_EX4_CACHEALGORITHM_H
 #define OS_EX4_CACHEALGORITHM_H
 
-#include <utility>
 #include "Block.h"
-#include <vector>
 
 class CacheAlgorithm
 {
@@ -20,17 +18,15 @@ private:
 	/** number of misses*/
 	int numberOfMisses;
 
+    /** number of blocks in the cache*/
+    int numberOfBlocks;
 
-protected:
 
-	/** number of blocks in the cache*/
-	int numberOfBlocks;
-
-	/**
-	* find the minimum block that is saved in the cache in order to remove it
-	* @return a pair that consist of the fd and the block number
-	*/
-	virtual std::pair<int, int> findMinimum()=0;
+    /**
+	 * find the minimum block that is saved in the cache in order to remove it
+	 * @return a pair that consist of the fd and the block number
+	 */
+    virtual std::pair<int, int> findMinimum();
 
 	/**
 	 * search the cache for the block, if found return the block
@@ -38,7 +34,11 @@ protected:
 	 * @param currentBlockNumber the current block to be read
 	 * @return upon success return the block , else return nullptr
 	 */
-	virtual Block* getBlockFromCache(int fd, int currentBlockNumber)=0;
+	virtual Block* getBlockFromCache(int fd, int currentBlockNumber);
+
+
+
+
 
 public:
 
@@ -78,18 +78,18 @@ public:
 	/**
 	 * search for the block in the cache, if the block is in the cache read from it
 	 * else, remove a block from the cache, and read the block from the disk
-	 * @param fd the file descriptorgetCacheBuffer()
+	 * @param fd the file descriptor
 	 * @param currentBlockNumber the current block to be read
 	 * @param currentBlockBuffer the current buffer
 	 * @return the number of bytes read
 	 */
-	virtual int read(int fd,int currentBlockNumber, void* currentBlockBuffer)=0;
+	virtual int read(int fd,int currentBlockNumber, void* currentBlockBuffer);
 
 	/**
 	 * sort the cache into a vector of block
 	 * @return a vector of all the blocks in the cache
 	 */
-	virtual std::vector<std::pair<char*,int>> sortCache()=0; //todo change the name
+	virtual std::vector<std::pair<char*,int>> sortCache(); //todo change the name
 
 
 };
