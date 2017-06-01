@@ -8,10 +8,7 @@
 #include "Block.h"
 #include "CacheAlgorithm.h"
 #include <map>
-#include <list>
 
-
-typedef std::pair<int,int> BLOCK_ID;
 
 class LRU: public CacheAlgorithm {
 
@@ -72,6 +69,12 @@ public:
 	 * @return the number of bytes read
 	 */
 	int read(int fd,int currentBlockNumber, void* currentBlockBuffer,size_t count,off_t offset, stat *fileInfo);
+
+	/**
+	 * sort the cache into a vector of block
+	 * @return a vector of all the blocks in the cache
+	 */
+	std::list<BLOCK_ID> getOrderedCache();
 };
 
 #endif //OS_EX4_LRU_H

@@ -410,10 +410,12 @@ int CacheFS_print_cache (const char *log_path){
 			logFile.open(resolvedPath, std::ofstream::app);
 			// receiving a vector that contains the absPath and
 			// the number of the block by the order of the algorithm
-			auto cacheBlocks = algorithm->sortCache(); //todo change ,create an data structure in LRU,LFU,FBR to perform find min,remove, printCache
+			auto cacheBlocks = algorithm->getOrderedCache();
 			//print the cache info
-			for (unsigned int i = 0; i < cacheBlocks.size(); i++) {
-				logFile << cacheBlocks.at(i).first << " " << cacheBlocks.at(i).second<<std::endl;
+			for (auto iter = cacheBlocks.begin(); iter != cacheBlocks.end(); iter++) {
+				 int index =isFileCurrentlyOpen((*iter).first);
+
+				logFile << openedFiles[index].second << " " << (*iter).second<<std::endl;
 			}
 			logFile.close();
 			return 0;

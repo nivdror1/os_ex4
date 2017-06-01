@@ -9,7 +9,9 @@
 #include "Block.h"
 #include <vector>
 #include <sys/stat.h>
+#include <list>
 
+typedef std::pair<int,int> BLOCK_ID;
 class CacheAlgorithm
 {
 private:
@@ -98,7 +100,7 @@ public:
 	 * sort the cache into a vector of block
 	 * @return a vector of all the blocks in the cache
 	 */
-	virtual std::vector<std::pair<char*,int>> sortCache()=0; //todo change the name
+	virtual std::list<BLOCK_ID> getOrderedCache()=0;
 
 
 };

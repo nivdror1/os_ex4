@@ -119,3 +119,11 @@ int LRU::read(int fd,int currentBlockNumber, void* currentBlockBuffer,size_t cou
 	return block->getPartOfBlockContent(tempBuffer,offset,count);
 }
 
+/**
+ * sort the cache into a vector of block
+ * @return a vector of all the blocks in the cache
+ */
+std::list<BLOCK_ID> LRU::getOrderedCache(){
+	return orderedCache;
+}
+
