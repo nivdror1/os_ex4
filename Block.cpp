@@ -4,6 +4,7 @@
 
 #include "Block.h"
 #include <cstring>
+#include <stdlib.h>
 
 /**
  * Constructor

@@ -27,10 +27,15 @@ protected:
 	int numberOfBlocks;
 
 	/**
+	 * the block size
+	 */
+	size_t blockSize;
+
+	/**
 	* find the minimum block that is saved in the cache in order to remove it
 	* @return a pair that consist of the fd and the block number
 	*/
-	virtual std::pair<int, int> findMinimum()=0;
+	virtual void eraseMinimum()=0;
 
 	/**
 	 * search the cache for the block, if found return the block
@@ -81,9 +86,10 @@ public:
 	 * @param fd the file descriptorgetCacheBuffer()
 	 * @param currentBlockNumber the current block to be read
 	 * @param currentBlockBuffer the current buffer
+	 * @param count the number of bytes to be read
 	 * @return the number of bytes read
 	 */
-	virtual int read(int fd,int currentBlockNumber, void* currentBlockBuffer)=0;
+	virtual size_t read(int fd,int currentBlockNumber, void* currentBlockBuffer, size_t count)=0;
 
 	/**
 	 * sort the cache into a vector of block
