@@ -14,11 +14,36 @@ class LRU: public CacheAlgorithm {
 
 private:
     /** the cache */
-    std::map<BLOCK_ID,Block*,LRU > cacheBuffer ; //todo not sure about the map definition
+    std::map<BLOCK_ID,Block*,LRU() > cacheBuffer ; //todo not sure about the map definition
 	/**
 	 * a vector of BLOCK_ID that sorted
 	 */
 	std::list<BLOCK_ID> orderedCache;
+
+	/**
+	 * when there is hit, read a block or a part of it from the cache
+	 * and relocated the block id to the end of list
+	 * @param currentBlockId the file descrioptor and the block number
+	 * @param count count how many bytes to be read
+	 * @param currentBlockBuffer the current buffer
+	 * @param block a block object
+	 * @param offset offset the offset to begin reading
+	 * @return the number of bytes read
+	 */
+	int hitCache(BLOCK_ID currentBlockId, size_t count,void* currentBlockBuffer ,Block * block,off_t offset);
+
+	/**
+	 * when there is a miss, if the cache is full erase the minimum.
+	 * read the block from the disk into the cache, and fill the current
+	 * @param currentBlockId the file descrioptor and the block number
+	 * @param count count how many bytes to be read
+	 * @param block block a block object
+	 * @param offset offset the offset to begin reading
+	 * @param fileInfo a stat object reperesented the file info
+	 * @return the number of bytes read
+	 */
+	int missCache(BLOCK_ID currentBlockId ,size_t count ,Block* block,
+	              off_t offset,struct stat *fileInfo,void *currentBlockBuffer);
 
 public:
     /**
@@ -39,14 +64,6 @@ public:
     */
     bool operator()(const BLOCK_ID key , const BLOCK_ID otherKey) const;
 
-    /**
-     * compare the time of two blocks in the cache,
-     * this comparison simulates the process of the LRU
-     * @param firstBlock a block id
-     * @param secondBlock a block id
-     * @return true if time> otherTime else return false
-     */
-    bool compare(const BLOCK_ID firstBlock, const BLOCK_ID secondBlock) const ;
 
     /**
 	* find the minimum block that is saved in the cache in order to remove it
@@ -73,7 +90,7 @@ public:
      * @param fileInfo a stat object reperesented the file info
 	 * @return the number of bytes read
 	 */
-	int read(int fd,int currentBlockNumber, void* currentBlockBuffer,size_t count,off_t offset, stat *fileInfo);
+	int read(int fd,int currentBlockNumber, void* currentBlockBuffer,size_t count,off_t offset, struct stat *fileInfo);
 
 	/**
 	 * sort the cache into a vector of block

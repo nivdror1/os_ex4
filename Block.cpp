@@ -5,7 +5,7 @@
 #include "Block.h"
 #include <cstring>
 #include <stdlib.h>
-#include <bits/stat.h>
+#include <sys/stat.h>
 #include <algorithm>
 
 /**
@@ -49,10 +49,10 @@ int Block::getPartOfBlockContent(void *buffer, off_t offset, size_t count)
 {
     off_t numberOfReadBytes;
     if ((_fileInfo->st_size/_fileInfo->st_blksize) == _currentBlockNumber){
-        numberOfReadBytes = std::min(_fileInfo->st_size-offset, count);
+        numberOfReadBytes = std::min(_fileInfo->st_size-offset, (off_t)count);
     }
     else {
-        numberOfReadBytes = std::min(((_currentBlockNumber+1)*_fileInfo->st_blksize)-offset, count);
+        numberOfReadBytes = std::min(((_currentBlockNumber+1)*_fileInfo->st_blksize)-offset, (off_t)count);
     }
     memcpy(buffer, _blockInfo, (size_t)numberOfReadBytes);
     return (int)numberOfReadBytes;

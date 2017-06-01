@@ -5,18 +5,13 @@
 #include <fcntl.h>
 #include <iostream>
 #include <sys/time.h>
+#include "CacheFS.h"
 
 int main(){
-	struct timeval before, after;
-	int beforeStatus;
-	//get the starting time
-	beforeStatus = gettimeofday(&before, NULL);
-	beforeStatus = gettimeofday(&before, NULL);
-	double niv;
-	niv= difftime(d,f);
-
-
-	std::cout<<niv<<std::endl;
-	std::cout<<j<<std::endl;
+	CacheFS_init(5,LRU,0,0);
+	int fd= CacheFS_open("+~JF186948981633951426.tmp");
+	void * buf;
+	CacheFS_pread(fd,buf,500,200);
+	CacheFS_close(fd);
 	return 0;
 }

@@ -94,7 +94,7 @@ public:
 	 * @param fileInfo a stat object reperesented the file info
 	 * * @return the number of bytes read
 	 */
-	virtual int read(int fd,int currentBlockNumber, void* currentBlockBuffer, size_t count, off_t offset, stat *fileinfo)=0;
+	virtual int read(int fd,int currentBlockNumber, void* currentBlockBuffer, size_t count, off_t offset, struct stat *fileinfo)=0;
 
 	/**
 	 * sort the cache into a vector of block

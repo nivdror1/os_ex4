@@ -15,6 +15,8 @@
 #include <ios>
 #include <fstream>
 
+#define MAX_CHAR_NUMBER 256
+
 
 std::vector<std::pair<int, char *> >openedFiles;
 
@@ -219,7 +221,7 @@ int CacheFS_init(int blocks_num, cache_algo_t cache_algo,
 */
 int CacheFS_destroy(){
     free(copyBuffer);
-    //todo delete the algorithm
+    delete algorithm;
     return 0;
 }
 
@@ -253,7 +255,7 @@ int CacheFS_destroy(){
 			   "/tmp" due to the use of NFS in the Aquarium.
  */
 int CacheFS_open(const char *pathname){
-    char *resolvedPath= nullptr;
+    char resolvedPath[MAX_CHAR_NUMBER];
 	int fd,curFile;
 	//get the absolute path and check if the file is in tmp directory
     if(isPathValid(pathname, resolvedPath, true) != -1){
@@ -344,7 +346,7 @@ int CacheFS_pread(int file_id, void *buf, size_t count, off_t offset){
 	int curIndex=isFileCurrentlyOpen(file_id);
 	int currentBlockNumber = offsetToBlockNumber(offset);
     int totalBytes = 0, currentBlockBytes = 0;
-    void* currentBlockBuffer = NULL;
+
 
 	if (curIndex != -1 && buf != NULL && currentBlockNumber >=0){
 
@@ -355,7 +357,12 @@ int CacheFS_pread(int file_id, void *buf, size_t count, off_t offset){
 			return 0;
 		}
 		while(count !=0){
-			currentBlockBytes = algorithm->read(file_id, currentBlockNumber, currentBlockBuffer,count,offset+totalBytes, &buffer);
+			void* currentBlockBuffer = NULL;
+			currentBlockBytes = algorithm->read(file_id, currentBlockNumber, currentBlockBuffer,
+			                                    count,offset+totalBytes, &buffer);
+			if(currentBlockBytes==-1){
+				return -1;
+			}
             currentBlockNumber++;
             memcpy(buf + totalBytes, currentBlockBuffer, (size_t)currentBlockBytes);
             totalBytes += currentBlockBytes;
@@ -403,7 +410,7 @@ Notes:
 		2. log_path is invalid.
  */
 int CacheFS_print_cache (const char *log_path){
-	char* resolvedPath = NULL;
+	char resolvedPath [MAX_CHAR_NUMBER];
 	if(isPathValid(log_path, resolvedPath, false)!= -1) {
 		//create the ofstream
 		std::ofstream logFile;

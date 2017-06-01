@@ -32,18 +32,6 @@ bool LRU::operator()(const std::pair<int,int> key , const std::pair<int,int>  ot
 }
 
 /**
- * compare the time of two blocks in the cache,
- * this comparison simulates the process of the LRU
- * @param firstBlock a block id
- * @param secondBlock a block id
- * @return true if time> otherTime else return false
- */
-bool LRU::compare(const std::pair<int,int> firstBlock, const std::pair<int,int> secondBlock ) const {
-	time_t firstTime = getBlockFromCache(firstBlock.first,firstBlock.second)->getLastReadTime();
-	time_t secondTime = getBlockFromCache(secondBlock.first,secondBlock.second)->getLastReadTime();
-	return difftime(firstTime, secondTime) > 0;
-}
-/**
  * find the minimum block that is saved in the cache in order to remove it
  * @return a pair that consist of the fd and the block number
  */
@@ -74,7 +62,59 @@ Block* LRU::getBlockFromCache(int fd, int currentBlockNumber) const{
 	return nullptr;
 
 }
+/**
+ * when there is hit, read a block or a part of it from the cache
+ * and relocated the block id to the end of list
+ * @param currentBlockId the file descrioptor and the block number
+ * @param count count how many bytes to be read
+ * @param currentBlockBuffer the current buffer
+ * @param block a block object
+ * @param offset offset the offset to begin reading
+ * @return the number of bytes read
+ */
+int LRU::hitCache(BLOCK_ID currentBlockId, size_t count,void* currentBlockBuffer ,Block * block, off_t offset) {
+	//move the block id to end of the list
 
+	auto searchedBlockId = std::find(orderedCache.begin(),
+	                                 orderedCache.end(), currentBlockId);
+	orderedCache.erase(searchedBlockId);
+	orderedCache.push_back(currentBlockId);
+
+	incrementNumberOfHits(); //increment the hit number
+	//read from the cache
+	return block->getPartOfBlockContent(currentBlockBuffer, offset, count);
+}
+
+/**
+ * when there is a miss, if the cache is full erase the minimum.
+ * read the block from the disk into the cache, and fill the current
+ * @param currentBlockId the file descrioptor and the block number
+ * @param count count how many bytes to be read
+ * @param block block a block object
+ * @param offset offset the offset to begin reading
+ * @param fileInfo a stat object reperesented the file info
+ * @return the number of bytes read
+ */
+int LRU::missCache(BLOCK_ID currentBlockId ,size_t count ,Block* block,
+                   off_t offset,struct stat *fileInfo,void *currentBlockBuffer ){
+	if(cacheBuffer.size()==getNumberOfBlocks()){
+		eraseMinimum();
+	}
+	incrementNumberOfMisses();
+
+	if(pread(currentBlockId.first,currentBlockBuffer,this->blockSize,offset-(offset% blockSize))==-1){
+		return -1;
+	}
+
+	try {
+		block = new Block(currentBlockBuffer,blockSize, currentBlockId.second, fileInfo);
+	}catch (std::bad_alloc e){
+		//todo error maybe throw exception
+	}
+	cacheBuffer.insert(std::pair<BLOCK_ID,Block*> (currentBlockId,block));
+
+	return block->getPartOfBlockContent(currentBlockBuffer,offset,count);
+}
 /**
  * search for the block in the cache, if the block is in the cache read from it
  * else, remove a block from the cache, and read the block from the disk
@@ -82,47 +122,20 @@ Block* LRU::getBlockFromCache(int fd, int currentBlockNumber) const{
  * @param currentBlockNumber the current block to be read
  * @param currentBlockBuffer the current buffer
  * @param offset the offset to begin reading
+ * @param count how many bytes to be read
  * @param fileInfo a stat object reperesented the file info
  * @return the number of bytes read
  */
-int LRU::read(int fd,int currentBlockNumber, void* currentBlockBuffer,size_t count, off_t offset, stat *fileInfo){
+int LRU::read(int fd,int currentBlockNumber, void* currentBlockBuffer,size_t count, off_t offset, struct stat *fileInfo){
 
 	BLOCK_ID currentBlockId =std::make_pair(fd,currentBlockNumber);
 	Block * block= getBlockFromCache(fd,currentBlockNumber);
 	if(block!= nullptr){
-		//move the block id to end of the list
-
-		auto searchedBlockId = std::find(orderedCache.begin(),
-		                                 orderedCache.end(),currentBlockId);
-		orderedCache.erase(searchedBlockId);
-		orderedCache.push_back(currentBlockId);
-
-		incrementNumberOfHits(); //increment the hit number
-		//read from the cache
-		if(count> blockSize){
-			memcpy(currentBlockBuffer, block, blockSize);
-			return (int)blockSize;
-		}
-		memcpy(currentBlockBuffer, block, count);
-		return (int)count;
+		return hitCache(currentBlockId, count,currentBlockBuffer , block, offset);
 	}
-	if(cacheBuffer.size()==getNumberOfBlocks()){
-		eraseMinimum();
-	}
-	incrementNumberOfMisses();
+	return missCache(currentBlockId ,count ,block,
+			offset,fileInfo,currentBlockBuffer );
 
-	void* tempBuffer = nullptr;
-
-	pread(fd,tempBuffer,this->blockSize,offset-(offset% blockSize));
-
-	try {
-		block = new Block(tempBuffer,blockSize, currentBlockNumber, fileInfo);
-	}catch (std::bad_alloc e){
-		//todo error maybe throw exception
-	}
-	cacheBuffer.insert(std::pair<BLOCK_ID,Block*> (currentBlockId,block));
-
-	return block->getPartOfBlockContent(tempBuffer,offset,count);
 }
 
 /**
