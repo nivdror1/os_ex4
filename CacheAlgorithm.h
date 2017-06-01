@@ -53,7 +53,7 @@ public:
 	/**
 	 * d-tor
 	 */
-	virtual ~CacheAlgorithm();
+	virtual ~CacheAlgorithm() {}
 
 	/**
 	 * get the number of hits

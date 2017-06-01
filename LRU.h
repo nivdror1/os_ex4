@@ -28,6 +28,11 @@ public:
      */
     LRU(int blocks_num,size_t blockSize);
 
+	/**
+	 * d-tor
+	 */
+	 ~LRU();
+
 
     /**
     * a functor whom compares the cache map by the operator <

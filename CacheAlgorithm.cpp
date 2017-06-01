@@ -3,6 +3,8 @@
 //
 
 #include "CacheAlgorithm.h"
+
+
 /**
 	 * get the number of hits
 	 * @return return the number of hits

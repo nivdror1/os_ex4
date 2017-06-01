@@ -12,6 +12,12 @@
  **/
 LRU::LRU(int blocks_num, size_t blockSize): numberOfBlocks(blocks_num),blockSize(blockSize){}
 
+LRU::~LRU(){
+	for(auto iter= cacheBuffer.begin();iter!= cacheBuffer.end();iter++){
+		delete (*iter).second;
+	}
+}
+
 
 /**
 * a functor whom compares the cache map by first comparing the fd
@@ -104,7 +110,7 @@ int LRU::read(int fd,int currentBlockNumber, void* currentBlockBuffer,size_t cou
 		eraseMinimum();
 	}
 	incrementNumberOfMisses();
-	//todo read the block
+
 	void* tempBuffer = nullptr;
 
 	pread(fd,tempBuffer,this->blockSize,offset-(offset% blockSize));
