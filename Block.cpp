@@ -45,7 +45,7 @@ void Block::incrementCount()
  * @param count
  * @return
  */
-int Block::getPartOfBlockContent(void *buffer, off_t offset, int count)
+int Block::getPartOfBlockContent(void *buffer, off_t offset, size_t count)
 {
     off_t numberOfReadBytes;
     if ((_fileInfo->st_size/_fileInfo->st_blksize) == _currentBlockNumber){
