@@ -4,6 +4,7 @@
 #include <cstring>
 #include <sys/time.h>
 
+
 /**
  * c-tor
  * @param blocks_num the number of blocks in the cache* get the map of the cache buffer
@@ -74,9 +75,11 @@ Block* LRU::getBlockFromCache(int fd, int currentBlockNumber) const{
  * @param fd the file descriptorgetCacheBuffer()
  * @param currentBlockNumber the current block to be read
  * @param currentBlockBuffer the current buffer
+ * @param offset the offset to begin reading
+ * @param fileInfo a stat object reperesented the file info
  * @return the number of bytes read
  */
-size_t LRU::read(int fd,int currentBlockNumber, void* currentBlockBuffer,size_t count, size_t offset){
+int LRU::read(int fd,int currentBlockNumber, void* currentBlockBuffer,size_t count, off_t offset, stat *fileInfo){
 
 	BLOCK_ID currentBlockId =std::make_pair(fd,currentBlockNumber);
 	Block * block= getBlockFromCache(fd,currentBlockNumber);
@@ -88,13 +91,14 @@ size_t LRU::read(int fd,int currentBlockNumber, void* currentBlockBuffer,size_t 
 		orderedCache.erase(searchedBlockId);
 		orderedCache.push_back(currentBlockId);
 
-		incrementNumberOfHits();
+		incrementNumberOfHits(); //increment the hit number
+		//read from the cache
 		if(count> blockSize){
 			memcpy(currentBlockBuffer, block, blockSize);
-			return blockSize;
+			return (int)blockSize;
 		}
 		memcpy(currentBlockBuffer, block, count);
-		return count;
+		return (int)count;
 	}
 	if(cacheBuffer.size()==getNumberOfBlocks()){
 		eraseMinimum();
@@ -102,12 +106,16 @@ size_t LRU::read(int fd,int currentBlockNumber, void* currentBlockBuffer,size_t 
 	incrementNumberOfMisses();
 	//todo read the block
 	void* tempBuffer = nullptr;
-	pread(fd,tempBuffer,this->blockSize,offset);
+
+	pread(fd,tempBuffer,this->blockSize,offset-(offset% blockSize));
+
 	try {
-		block = new Block(tempBuffer,blockSize,currentBlockNumber);
+		block = new Block(tempBuffer,blockSize, currentBlockNumber, fileInfo);
 	}catch (std::bad_alloc e){
 		//todo error maybe throw exception
 	}
-	cacheBuffer.insert(currentBlockId,tempBuffer);
+	cacheBuffer.insert(std::pair<BLOCK_ID,Block*> (currentBlockId,block));
+
+	return block->getPartOfBlockContent(tempBuffer,offset,count);
 }
 

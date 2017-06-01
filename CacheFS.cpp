@@ -340,7 +340,7 @@ int offsetToBlockNumber(off_t offset){
 int CacheFS_pread(int file_id, void *buf, size_t count, off_t offset){
 	int curIndex=isFileCurrentlyOpen(file_id);
 	int currentBlockNumber = offsetToBlockNumber(offset);
-    size_t totalBytes = 0, currentBlockBytes = 0;
+    int totalBytes = 0, currentBlockBytes = 0;
     void* currentBlockBuffer = NULL;
 
 	if (curIndex != -1 && buf != NULL && currentBlockNumber >=0){
@@ -352,13 +352,13 @@ int CacheFS_pread(int file_id, void *buf, size_t count, off_t offset){
 			return 0;
 		}
 		while(count !=0){
-			currentBlockBytes = algorithm->read(file_id, currentBlockNumber, currentBlockBuffer,count,offset+totalBytes);
+			currentBlockBytes = algorithm->read(file_id, currentBlockNumber, currentBlockBuffer,count,offset+totalBytes, &buffer);
             currentBlockNumber++;
             memcpy(buf + totalBytes, currentBlockBuffer, (size_t)currentBlockBytes);
             totalBytes += currentBlockBytes;
 			count-= currentBlockBytes;
 		}
-        return (int)totalBytes;
+        return totalBytes;
 	}
 	return -1;
 }
