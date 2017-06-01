@@ -86,7 +86,7 @@ int LRUAlgo::hitCache(BLOCK_ID currentBlockId, size_t count,void* currentBlockBu
  * @return the number of bytes read
  */
 int LRUAlgo::missCache(BLOCK_ID currentBlockId ,size_t count ,Block* block,
-                   off_t offset,struct stat *fileInfo,void *currentBlockBuffer ){
+                   off_t offset,void *currentBlockBuffer ){
 	if(cacheBuffer.size()==getNumberOfBlocks()){
 		eraseMinimum();
 	}
@@ -97,11 +97,12 @@ int LRUAlgo::missCache(BLOCK_ID currentBlockId ,size_t count ,Block* block,
 	}
 
 	try {
-		block = new Block(currentBlockBuffer,blockSize, currentBlockId.second, fileInfo);
+		block = new Block(currentBlockBuffer,blockSize, currentBlockId.second,currentBlockId.first);
 	}catch (std::bad_alloc e){
 		//todo error maybe throw exception
 	}
 	cacheBuffer.insert(std::pair<BLOCK_ID,Block*> (currentBlockId,block));
+	orderedCache.push_back(currentBlockId);
 
 	return block->getPartOfBlockContent(currentBlockBuffer,offset,count);
 }
@@ -116,7 +117,7 @@ int LRUAlgo::missCache(BLOCK_ID currentBlockId ,size_t count ,Block* block,
  * @param fileInfo a stat object reperesented the file info
  * @return the number of bytes read
  */
-int LRUAlgo::read(int fd,int currentBlockNumber, void* currentBlockBuffer,size_t count, off_t offset, struct stat *fileInfo){
+int LRUAlgo::read(int fd,int currentBlockNumber, void* currentBlockBuffer,size_t count, off_t offset){
 
 	BLOCK_ID currentBlockId =std::make_pair(fd,currentBlockNumber);
 	Block * block= getBlockFromCache(fd,currentBlockNumber);
@@ -124,7 +125,7 @@ int LRUAlgo::read(int fd,int currentBlockNumber, void* currentBlockBuffer,size_t
 		return hitCache(currentBlockId, count,currentBlockBuffer , block, offset);
 	}
 	return missCache(currentBlockId ,count ,block,
-			offset,fileInfo,currentBlockBuffer );
+			offset,currentBlockBuffer );
 
 }
 

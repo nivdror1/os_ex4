@@ -91,10 +91,9 @@ public:
 	 * @param currentBlockBuffer the current buffer
 	 * @param count the number of bytes to be read
 	 * @param offset the offset to begin reading
-	 * @param fileInfo a stat object reperesented the file info
 	 * * @return the number of bytes read
 	 */
-	virtual int read(int fd,int currentBlockNumber, void* currentBlockBuffer, size_t count, off_t offset, struct stat *fileinfo)=0;
+	virtual int read(int fd,int currentBlockNumber, void* currentBlockBuffer, size_t count, off_t offset)=0;
 
 	/**
 	 * sort the cache into a vector of block

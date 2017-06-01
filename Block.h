@@ -22,8 +22,10 @@ private:
 
     int _currentBlockNumber;
 
-    /** Information struct of the file that this block is part of */
-    struct stat *_fileInfo;
+//    /** Information struct of the file that this block is part of */
+//    struct stat *_fileInfo;
+    /** the file descriptor*/
+    int _fd;
 
 public:
 
@@ -31,9 +33,9 @@ public:
      * Constructor
      * @param blockInfo the content of this block
      * @param blockOffset The relative starting offset of the block.
-     * @param fileInfo Information struct of the file that this block is part of
+     * @param fd the file descriptor
      */
-    Block(void* blockInfo, size_t blockSize, int currentBlockNumber, struct stat *fileInfo);
+    Block(void* blockInfo, size_t blockSize, int currentBlockNumber, int fd);
 
     /**
      * Returns the offset of this block.

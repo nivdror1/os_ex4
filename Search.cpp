@@ -9,9 +9,14 @@
 
 int main(){
 	CacheFS_init(5,LRU,0,0);
-	int fd= CacheFS_open("+~JF186948981633951426.tmp");
+	int fd= CacheFS_open("/tmp/niv.txt");
 	void * buf;
-	CacheFS_pread(fd,buf,500,200);
+	CacheFS_pread(fd,buf,50,200);
+	CacheFS_pread(fd,buf,50,200);
+	CacheFS_pread(fd,buf,50,300);
+	CacheFS_print_cache("/tmp/niv");
+	CacheFS_print_stat("/tmp/niv");
 	CacheFS_close(fd);
+	CacheFS_destroy();
 	return 0;
 }

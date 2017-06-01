@@ -14,6 +14,7 @@
 #include <cstring>
 #include <ios>
 #include <fstream>
+#include <iostream>
 
 #define MAX_CHAR_NUMBER 256
 
@@ -38,19 +39,19 @@ int getAbsolutePath(const char *pathname,char *resolvedPath ){
     struct stat buf;
     int result = 0;
     //check if the pathname is a Symbolic link
-    if(lstat(pathname,&buf)!=-1) {
+    if(lstat(pathname,&buf)!=-1 ) {
         if (S_ISLNK(buf.st_mode)) {
             // get the absolute path from a symbolic link
             if (readlink(pathname, resolvedPath, 256) == -1) {
                 result--;
             }
-        } else {
-            //todo do i need to find out whether this is a regular file
-            // get the absolute path from a relative path
-            realpath(pathname, resolvedPath);
-            if (resolvedPath == nullptr) {
-                result--;
-            }
+        }else {
+	        //todo do i need to find out whether this is a regular file
+	        // get the absolute path from a relative path
+	        realpath(pathname, resolvedPath);
+	        if (resolvedPath == nullptr) {
+		        result--;
+	        }
         }
     }
     else{
@@ -84,7 +85,7 @@ int isRegularFile(const char *absPath)
 	if(stat(absPath, &path_stat)!=-1){
 		return S_ISREG(path_stat.st_mode);
 	}
-	return -1;
+	return 0;
 }
 
 /**
@@ -97,7 +98,7 @@ int isDirectory(const char *path) {
 	if (stat(path, &statbuf) != -1) {
 		return S_ISDIR(statbuf.st_mode);
 	}
-	return -1;
+	return 0;
 
 }
 
@@ -124,18 +125,23 @@ int isFileCurrentlyOpen(int fd){
  */
 bool isPathValid(const char *path, char *resolvedPath, bool flag){
 	if(getAbsolutePath(path,resolvedPath) != -1) {
-		if (isRegularFile(resolvedPath) != -1) {
+		std::string temp = resolvedPath;
+		if (flag && temp.find("/tmp/") == std::string::npos){
+			return false;
+		}
+		if (isRegularFile(resolvedPath) != 0) {
 			return true;
-		} else {
-			//check if the directory is valid
-			std::string temp = resolvedPath;
-			std::size_t found = temp.find_last_of('/');
-			std::string dir  = temp.substr(0,found+1); //todo it contain the '/'
-            if (flag && temp.find("/tmp/") == std::string::npos){
-                return false;
-            }
-
-			return (isDirectory(dir.c_str()) != -1) ;
+		}
+	} else {
+		std::string temp = path;
+		std::size_t found = temp.find_last_of('/');
+		std::string dir  = temp.substr(0,found+1); //todo it contain the '/'
+		std::string fileName = temp.substr(found+1,std::string::npos);
+		//check if the directory is valid
+		if(isDirectory(dir.c_str()) != 0){
+			dir += fileName;
+			strcpy(resolvedPath,dir.c_str());
+			return true;
 		}
 	}
 	return false;
@@ -255,10 +261,10 @@ int CacheFS_destroy(){
 			   "/tmp" due to the use of NFS in the Aquarium.
  */
 int CacheFS_open(const char *pathname){
-    char resolvedPath[MAX_CHAR_NUMBER];
+    char* resolvedPath= (char *) malloc(sizeof(char) * MAX_CHAR_NUMBER);
 	int fd,curFile;
 	//get the absolute path and check if the file is in tmp directory
-    if(isPathValid(pathname, resolvedPath, true) != -1){
+    if(isPathValid(pathname, resolvedPath, true)){
 	    //check if the file is already open
 	    curFile = isFileCurrentlyOpen(resolvedPath);
 	    if(curFile == -1){
@@ -346,20 +352,22 @@ int CacheFS_pread(int file_id, void *buf, size_t count, off_t offset){
 	int curIndex=isFileCurrentlyOpen(file_id);
 	int currentBlockNumber = offsetToBlockNumber(offset);
     int totalBytes = 0, currentBlockBytes = 0;
-
+	struct stat st;
+	fstat(file_id,&st);
 
 	if (curIndex != -1 && buf != NULL && currentBlockNumber >=0){
 
-		struct stat buffer;
-		stat(openedFiles[curIndex].second,&buffer);
 
-		if(buffer.st_size < offset){
+		off_t  fileSize= lseek(file_id,0,SEEK_END);
+
+		if(fileSize< offset){
+
 			return 0;
 		}
-		while(count !=0){
-			void* currentBlockBuffer = NULL;
+		while(count !=0 && offset+totalBytes!=fileSize){
+			void *currentBlockBuffer =aligned_alloc(st.st_blksize,st.st_blksize);
 			currentBlockBytes = algorithm->read(file_id, currentBlockNumber, currentBlockBuffer,
-			                                    count,offset+totalBytes, &buffer);
+			                                    count,offset+totalBytes);
 			if(currentBlockBytes==-1){
 				return -1;
 			}
@@ -410,8 +418,8 @@ Notes:
 		2. log_path is invalid.
  */
 int CacheFS_print_cache (const char *log_path){
-	char resolvedPath [MAX_CHAR_NUMBER];
-	if(isPathValid(log_path, resolvedPath, false)!= -1) {
+	char* resolvedPath= (char *) malloc(sizeof(char) * MAX_CHAR_NUMBER);
+	if(isPathValid(log_path, resolvedPath, false)) {
 		//create the ofstream
 		std::ofstream logFile;
 		logFile.exceptions(std::ofstream::failbit | std::ofstream::badbit);
@@ -424,7 +432,6 @@ int CacheFS_print_cache (const char *log_path){
 			//print the cache info
 			for (auto iter = cacheBlocks.begin(); iter != cacheBlocks.end(); iter++) {
 				 int index =isFileCurrentlyOpen((*iter).first);
-
 				logFile << openedFiles[index].second << " " << (*iter).second<<std::endl;
 			}
 			logFile.close();
@@ -469,7 +476,7 @@ Notes:
 		2. log_path is invalid.
  */
 int CacheFS_print_stat (const char *log_path){
-	char* resolvedPath = NULL;
+	char* resolvedPath= (char *) malloc(sizeof(char) * MAX_CHAR_NUMBER);
 	if(isPathValid(log_path, resolvedPath, false)!= -1) {
 		//create the ofstream
 		std::ofstream logFile;

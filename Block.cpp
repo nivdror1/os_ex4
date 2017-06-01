@@ -7,16 +7,17 @@
 #include <stdlib.h>
 #include <sys/stat.h>
 #include <algorithm>
+#include <zconf.h>
 
 /**
  * Constructor
  * @param blockInfo the content of this block
  * @param blockOffset The relative starting offset of the block.
  */
-Block::Block(void* blockInfo, size_t blockSize, int currentBlockNumber ,struct stat *fileInfo) :
-        _count(1), _currentBlockNumber(currentBlockNumber), _fileInfo(fileInfo)
-{
-    _blockInfo = aligned_alloc(blockSize, blockSize);
+Block::Block(void* blockInfo, size_t blockSize, int currentBlockNumber ,int fd) :
+        _count(1), _currentBlockNumber(currentBlockNumber), _fd(fd)
+{ //todo i had passec the fd for lseek (to get the size of file) and for fstat
+    _blockInfo = aligned_alloc(blockSize, blockSize); //todo do we really need to use aligned alloc
     memcpy(_blockInfo, blockInfo, blockSize);
 }
 
@@ -47,12 +48,16 @@ void Block::incrementCount()
  */
 int Block::getPartOfBlockContent(void *buffer, off_t offset, size_t count)
 {
+    struct stat st;
+    fstat(this->_fd,&st); //todo error
+    off_t fileSize= lseek(_fd,0,SEEK_END); //todo error
+
     off_t numberOfReadBytes;
-    if ((_fileInfo->st_size/_fileInfo->st_blksize) == _currentBlockNumber){
-        numberOfReadBytes = std::min(_fileInfo->st_size-offset, (off_t)count);
+    if ((fileSize/st.st_blksize) == _currentBlockNumber){
+        numberOfReadBytes = std::min(fileSize-offset, (off_t)count);
     }
     else {
-        numberOfReadBytes = std::min(((_currentBlockNumber+1)*_fileInfo->st_blksize)-offset, (off_t)count);
+        numberOfReadBytes = std::min(((_currentBlockNumber+1)*st.st_blksize)-offset, (off_t)count);
     }
     memcpy(buffer, _blockInfo, (size_t)numberOfReadBytes);
     return (int)numberOfReadBytes;

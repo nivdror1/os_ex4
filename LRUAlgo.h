@@ -52,11 +52,10 @@ private:
 	 * @param count count how many bytes to be read
 	 * @param block block a block object
 	 * @param offset offset the offset to begin reading
-	 * @param fileInfo a stat object reperesented the file info
 	 * @return the number of bytes read
 	 */
 	int missCache(BLOCK_ID currentBlockId ,size_t count ,Block* block,
-	              off_t offset,struct stat *fileInfo,void *currentBlockBuffer);
+	              off_t offset,void *currentBlockBuffer);
 
 public:
     /**
@@ -94,10 +93,9 @@ public:
 	 * @param currentBlockBuffer the current buffer
      * @param count the number of bytes to be read
      * @param offset the offset to begin reading
-     * @param fileInfo a stat object reperesented the file info
 	 * @return the number of bytes read
 	 */
-	int read(int fd,int currentBlockNumber, void* currentBlockBuffer,size_t count,off_t offset, struct stat *fileInfo);
+	int read(int fd,int currentBlockNumber, void* currentBlockBuffer,size_t count,off_t offset);
 
 	/**
 	 * sort the cache into a vector of block
