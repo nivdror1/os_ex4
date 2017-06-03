@@ -8,12 +8,9 @@
 /**
  * c-tor
  * @param blocks_num the number of blocks in the cache* get the map of the cache buffer
- * @param blockSize the block size
+ * @param size the block size
  **/
-LRUAlgo::LRUAlgo(int blocks_num, size_t Size){
-	numberOfBlocks= blocks_num;
-	blockSize = Size;
-}
+LRUAlgo::LRUAlgo(int blocks_num, size_t size): CacheAlgorithm(blocks_num,size){}
 
 LRUAlgo::~LRUAlgo(){
 	for(auto iter= cacheBuffer.begin();iter!= cacheBuffer.end();iter++){
@@ -31,11 +28,12 @@ LRUAlgo::~LRUAlgo(){
 	auto searchedBlock = cacheBuffer.find(std::make_pair(curBlock.first,curBlock.second));
 	if(searchedBlock!=cacheBuffer.end()){
 		 delete searchedBlock->second;
+		cacheBuffer.erase(searchedBlock);
 	}
 	//remove from the ordered cache list
 	orderedCache.pop_front();
 
-};
+}
 
 
 /**
@@ -78,11 +76,11 @@ int LRUAlgo::hitCache(BLOCK_ID currentBlockId, size_t count,void* currentBlockBu
 /**
  * when there is a miss, if the cache is full erase the minimum.
  * read the block from the disk into the cache, and fill the current
- * @param currentBlockId the file descrioptor and the block number
+ * @param currentBlockId the file descriptor and the block number
  * @param count count how many bytes to be read
  * @param block block a block object
  * @param offset offset the offset to begin reading
- * @param fileInfo a stat object reperesented the file info
+ * @param fileInfo a stat object represented the file info
  * @return the number of bytes read
  */
 int LRUAlgo::missCache(BLOCK_ID currentBlockId ,size_t count ,Block* block,
@@ -106,10 +104,11 @@ int LRUAlgo::missCache(BLOCK_ID currentBlockId ,size_t count ,Block* block,
 
 	return block->getPartOfBlockContent(currentBlockBuffer,offset,count);
 }
+
 /**
  * search for the block in the cache, if the block is in the cache read from it
  * else, remove a block from the cache, and read the block from the disk
- * @param fd the file descriptorgetCacheBuffer()
+ * @param fd the file descriptor
  * @param currentBlockNumber the current block to be read
  * @param currentBlockBuffer the current buffer
  * @param offset the offset to begin reading

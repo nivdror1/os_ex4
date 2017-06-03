@@ -6,9 +6,16 @@
 
 
 /**
-	 * get the number of hits
-	 * @return return the number of hits
-	 */
+ * c-tor
+ * @param blocks_num the number of blocks in the cache
+ * @param blockSize the block size
+ */
+CacheAlgorithm::CacheAlgorithm(int blocks_num,size_t size):numberOfBlocks(blocks_num), blockSize(size){}
+
+/**
+ * get the number of hits
+ * @return return the number of hits
+ */
 int CacheAlgorithm::getNumberOfHits(){
     return this->numberOfHits;
 }

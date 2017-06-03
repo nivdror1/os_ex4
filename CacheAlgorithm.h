@@ -12,6 +12,21 @@
 #include <list>
 
 typedef std::pair<int,int> BLOCK_ID;
+
+struct CompareItems{
+    /**
+    * a functor whom compares the cache map by first comparing the fd
+    * and comparing the block number
+    */
+    bool operator()(const std::pair<int,int> key , const std::pair<int,int>  otherKey) const{
+        if (key.first < otherKey.first){
+            return true;
+        }else{
+            return key.second < otherKey.second;
+        }
+    }
+};
+
 class CacheAlgorithm
 {
 private:
@@ -22,7 +37,6 @@ private:
 
 	/** number of misses*/
 	int numberOfMisses;
-
 
 protected:
 
@@ -49,6 +63,12 @@ protected:
 	virtual Block* getBlockFromCache(int fd, int currentBlockNumber)const =0;
 
 public:
+    /**
+     * c-tor
+     * @param blocks_num the number of blocks in the cache
+     * @param size the block size
+     */
+    CacheAlgorithm(int blocks_num,size_t size);
 
 	/**
 	 * d-tor
@@ -100,7 +120,6 @@ public:
 	 * @return a vector of all the blocks in the cache
 	 */
 	virtual std::list<BLOCK_ID> getOrderedCache()=0;
-
 
 };
 

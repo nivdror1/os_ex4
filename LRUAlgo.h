@@ -9,19 +9,7 @@
 #include "CacheAlgorithm.h"
 #include <map>
 
-struct CompareItems{
-	/**
-	* a functor whom compares the cache map by first comparing the fd
-	* and comparing the block number
-	*/
-	bool operator()(const std::pair<int,int> key , const std::pair<int,int>  otherKey) const{
-		if (key.first < otherKey.first){
-			return true;
-		}else{
-			return key.second < otherKey.second;
-		}
-	}
-};
+
 
 class LRUAlgo: public CacheAlgorithm {
 
@@ -61,9 +49,9 @@ public:
     /**
      * c-tor
      * @param blocks_num the number of blocks in the cache
-     * @param blockSize the block size
+     * @param size the block size
      */
-    LRUAlgo(int blocks_num,size_t blockSize);
+    LRUAlgo(int blocks_num,size_t size);
 
 	/**
 	 * d-tor
@@ -88,7 +76,7 @@ public:
 	/**
 	 * search for the block in the cache, if the block is in the cache read from it
 	 * else, remove a block from the cache, and read the block from the disk
-	 * @param fd the file descriptorgetCacheBuffer()
+	 * @param fd the file descriptor
 	 * @param currentBlockNumber the current block to be read
 	 * @param currentBlockBuffer the current buffer
      * @param count the number of bytes to be read
