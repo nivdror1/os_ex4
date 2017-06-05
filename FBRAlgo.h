@@ -22,6 +22,10 @@ private:
      */
     std::list<BLOCK_ID> orderedCache;
 
+    int _sizeOfOldSection;
+
+    int _sizeOfNewSection;
+
     /**
      * when there is hit, read a block or a part of it from the cache
      * and relocated the block id to the end of list
