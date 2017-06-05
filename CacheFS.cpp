@@ -372,7 +372,7 @@ int CacheFS_pread(int file_id, void *buf, size_t count, off_t offset){
 				return -1;
 			}
             currentBlockNumber++;
-            memcpy(buf + totalBytes, currentBlockBuffer, (size_t)currentBlockBytes);
+            memcpy((char*)buf + totalBytes, currentBlockBuffer, (size_t)currentBlockBytes);
             totalBytes += currentBlockBytes;
 			count-= currentBlockBytes;
 		}

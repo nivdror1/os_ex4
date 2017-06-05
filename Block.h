@@ -10,6 +10,8 @@
 #include <sys/types.h>
 #include <ctime>
 
+enum State {Old,New,Middle};
+
 class Block {
 
 private:
@@ -26,6 +28,9 @@ private:
 //    struct stat *_fileInfo;
     /** the file descriptor*/
     int _fd;
+
+    /** Flag that shows in which section this block belongs  */
+    State _state;
 
 public:
 
@@ -49,13 +54,26 @@ public:
     void incrementCount();
 
     /**
-     *
-     * @param buffer
-     * @param offset
-     * @param count
-     * @return
+     * Insert to the given buffer the content in the block that starts with offset of offset and
+     * copy count amount of bytes.
+     * @param buffer the buffer to copy to.
+     * @param offset the starting offset of the copy
+     * @param count number of bytes to copy
+     * @return number of bytes that actually copied
      */
     int getPartOfBlockContent(void* buffer, off_t offset, size_t count);
+
+    /**
+     * Returns the current section that this block belongs to.
+     * @return the current section that this block belongs to.
+     */
+    State getState() const;
+
+    /**
+     * Sets the current section that this block belongs to the given state.
+     * @param state the new section that this block belongs to.
+     */
+    void setState(State state);
 
 };
 

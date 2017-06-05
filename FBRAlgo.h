@@ -1,29 +1,26 @@
 //
-// Created by nivdror1 on 5/24/17.
+// Created by ido.shachar on 6/5/17.
 //
 
-#ifndef OS_EX4_LFU_H
-#define OS_EX4_LFU_H
+#ifndef OS_EX4_FBRALGO_H
+#define OS_EX4_FBRALGO_H
 
+
+#include "Block.h"
 #include "CacheAlgorithm.h"
 #include <map>
 
+typedef std::pair<BLOCK_ID,Block*> BLOCK_ITEM;
 
-struct CompareItemsByFrequentlyUsed{
-    /**
-    * a functor whom compares the cache map by the frequently of block usage
-    */
-    bool operator()(const std::pair<BLOCK_ID, Block*>& left , const std::pair<BLOCK_ID, Block*>&right) const{
-        return left.second->getCount() < right.second->getCount();
-    }
-};
-
-class LFUAlgo: public CacheAlgorithm {
+class FBRAlgo: public CacheAlgorithm {
 
 private:
     /** the cache */
-    std::map<BLOCK_ID,Block*, CompareItems> cacheBuffer ;
-
+    std::map<BLOCK_ID,Block*, CompareItems> cacheBuffer ; //todo not sure about the map definition
+    /**
+     * a vector of BLOCK_ID that sorted
+     */
+    std::list<BLOCK_ID> orderedCache;
 
     /**
      * when there is hit, read a block or a part of it from the cache
@@ -49,19 +46,20 @@ private:
     int missCache(BLOCK_ID currentBlockId ,size_t count ,Block* block,
                   off_t offset,void *currentBlockBuffer);
 
-
 public:
     /**
      * c-tor
      * @param blocks_num the number of blocks in the cache
      * @param size the block size
+     * @param f_old
+     * @param f_new
      */
-    LFUAlgo(int blocks_num,size_t size);
+    FBRAlgo(int blocks_num,size_t size, double f_old , double f_new );
 
     /**
      * d-tor
      */
-    ~LFUAlgo();
+    ~FBRAlgo();
 
 
     /**
@@ -81,7 +79,7 @@ public:
     /**
      * search for the block in the cache, if the block is in the cache read from it
      * else, remove a block from the cache, and read the block from the disk
-     * @param fd the file descriptorgetCacheBuffer()
+     * @param fd the file descriptor
      * @param currentBlockNumber the current block to be read
      * @param currentBlockBuffer the current buffer
      * @param count the number of bytes to be read
@@ -98,4 +96,5 @@ public:
 };
 
 
-#endif //OS_EX4_LFU_H
+
+#endif //OS_EX4_FBRALGO_H

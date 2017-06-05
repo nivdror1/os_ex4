@@ -15,7 +15,7 @@
  * @param blockOffset The relative starting offset of the block.
  */
 Block::Block(void* blockInfo, size_t blockSize, int currentBlockNumber ,int fd) :
-        _count(1), _currentBlockNumber(currentBlockNumber), _fd(fd)
+        _count(1), _currentBlockNumber(currentBlockNumber), _fd(fd), _state(New)
 { //todo i had passec the fd for lseek (to get the size of file) and for fstat
     _blockInfo = aligned_alloc(blockSize, blockSize); //todo do we really need to use aligned alloc
     memcpy(_blockInfo, blockInfo, blockSize);
@@ -61,4 +61,22 @@ int Block::getPartOfBlockContent(void *buffer, off_t offset, size_t count)
     }
     memcpy(buffer, _blockInfo, (size_t)numberOfReadBytes);
     return (int)numberOfReadBytes;
+}
+
+/**
+ * Returns the current section that this block belongs to.
+ * @return the current section that this block belongs to.
+ */
+State Block::getState() const
+{
+    return _state;
+}
+
+/**
+ * Sets the current section that this block belongs to the given state.
+ * @param state the new section that this block belongs to.
+ */
+void Block::setState(State state)
+{
+    Block::_state = state;
 }
