@@ -563,11 +563,11 @@ void basicFBR()
 
 int main()
 {
-    sanityCheck();
-//    doubleOpenClose();
-//    offsetTooBig();
-//    basicLRU();
-//    basicLFU();
+    //sanityCheck();
+  //doubleOpenClose();
+//   offsetTooBig();
+  // basicLRU();
+ basicLFU();
 //    basicFBR();
 
     return 0;

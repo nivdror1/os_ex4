@@ -6,6 +6,8 @@
 #include "Block.h"
 #include "CacheAlgorithm.h"
 #include "LRUAlgo.h"
+#include "LFUAlgo.h"
+#include "FBRAlgo.h"
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -200,9 +202,13 @@ int CacheFS_init(int blocks_num, cache_algo_t cache_algo,
             // todo error
 	        return -1;
         }
+	    algorithm = new FBRAlgo(blocks_num, blockSize, f_old, f_new);
     }
 	if(cache_algo==LRU){
 		algorithm = new LRUAlgo(blocks_num, blockSize);
+	}
+	if(cache_algo == LFU){
+		algorithm = new LFUAlgo(blocks_num, blockSize);
 	}
 
     return 0;
