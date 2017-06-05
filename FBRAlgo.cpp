@@ -16,18 +16,18 @@ FBRAlgo::FBRAlgo(int blocks_num,size_t size, double f_old , double f_new ):
     _sizeOfNewSection = (int)(blocks_num*f_new);
     _sizeOfOldSection = (int)(blocks_num*f_old);
 
-    //define an iterator for the node of the end of the old section
-    auto endOfOldSection = orderedCache.begin();
-    std::advance(endOfOldSection, _sizeOfOldSection);
-    _endOfOldSection = endOfOldSection;
-
-    //define an iterator for the node of the end of the middle section
-    int middleSectionSize = numberOfBlocks - _sizeOfNewSection - _sizeOfOldSection;
-    if (middleSectionSize > 0){
-        _hasMiddle =true;
-        _endOfMiddleSection = _endOfOldSection;
-        std::advance(_endOfMiddleSection, middleSectionSize);
-    }
+//    //define an iterator for the node of the end of the old section
+//    auto endOfOldSection = orderedCache.begin();
+//    std::advance(endOfOldSection, _sizeOfOldSection);
+//    _endOfOldSection = endOfOldSection;
+//
+//    //define an iterator for the node of the end of the middle section
+//    int middleSectionSize = numberOfBlocks - _sizeOfNewSection - _sizeOfOldSection;
+//    if (middleSectionSize > 0){
+//        _hasMiddle =true;
+//        _endOfMiddleSection = orderedCache.begin();
+//        std::advance(_endOfMiddleSection, _sizeOfOldSection + middleSectionSize);
+//    }
 }
 
 FBRAlgo::~FBRAlgo(){
@@ -42,6 +42,19 @@ FBRAlgo::~FBRAlgo(){
  */
 void FBRAlgo::eraseMinimum(){
 
+    //define an iterator for the node of the end of the old section
+    auto endOfOldSection = orderedCache.begin();
+    std::advance(endOfOldSection, _sizeOfOldSection);
+    _endOfOldSection = endOfOldSection;
+
+    //define an iterator for the node of the end of the middle section
+    int middleSectionSize = numberOfBlocks - _sizeOfNewSection - _sizeOfOldSection;
+    if (middleSectionSize > 0){
+        _hasMiddle =true;
+        _endOfMiddleSection = orderedCache.begin();
+        std::advance(_endOfMiddleSection, _sizeOfOldSection + middleSectionSize);
+    }
+
     // todo ugly code, but with extern struct you cannot use cacheBuffer and it's critical
     auto compare = [this](const BLOCK_ID& left , const BLOCK_ID& right){
         return cacheBuffer.at(left)->getCount() < cacheBuffer.at(right)->getCount();
@@ -50,7 +63,7 @@ void FBRAlgo::eraseMinimum(){
 
     cacheBuffer.at(*_endOfOldSection)->setState(State::Old);
     // change last element in middle section state to middle
-    if (_hasMiddle){
+    if (middleSectionSize > 0){
         cacheBuffer.at(*_endOfMiddleSection)->setState(State::Middle);
     }
 

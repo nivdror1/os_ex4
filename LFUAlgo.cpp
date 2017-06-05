@@ -134,13 +134,7 @@ std::list<BLOCK_ID> LFUAlgo::getOrderedCache(){
     };
     for(auto curItem: cacheBuffer){
         orderedCache.push_back(curItem.first);
-        std::cout<<curItem.first.first<<"    "<< curItem.first.second<<std::endl;
-        cacheBuffer.at(curItem.first);
     }
-    for(auto itemInList: orderedCache){
-        std::cout<<itemInList.first<<"    "<< itemInList.second<<std::endl;
-    }
-    std::cout<<"  "<<std::endl;
     orderedCache.sort(compare);
     return orderedCache;
 }

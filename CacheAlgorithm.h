@@ -21,9 +21,10 @@ struct CompareItems{
     bool operator()(const std::pair<int,int> key , const std::pair<int,int>  otherKey) const{
         if (key.first < otherKey.first){
             return true;
-        }else{
+        }else if (key.first == otherKey.first) {
             return key.second < otherKey.second;
         }
+        return false;
     }
 };
 

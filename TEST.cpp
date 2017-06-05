@@ -264,7 +264,7 @@ void basicLRU()
     // review stats:
     CacheFS_print_stat("/tmp/LRU_stats.txt");
     resultsFileInput.open("/tmp/LRU_stats.txt");
-    char statsResults[10000];
+    char statsResults[10000] = "\0";
     if (resultsFileInput.is_open()) {
         resultsFileInput.read(statsResults, 10000);
 
@@ -377,7 +377,7 @@ void basicLFU()
 
     // review stats:
     resultsFileInput.open("/tmp/LFU_stats.txt");
-    char statsResults[10000];
+    char statsResults[10000] = "\0";
     if (resultsFileInput.is_open()) {
         resultsFileInput.read(statsResults, 10000);
 
@@ -563,12 +563,12 @@ void basicFBR()
 
 int main()
 {
-    //sanityCheck();
-  //doubleOpenClose();
-//   offsetTooBig();
-  // basicLRU();
- basicLFU();
-//    basicFBR();
+//    sanityCheck();
+//    doubleOpenClose();
+//    offsetTooBig();
+//    basicLRU();
+//    basicLFU();
+    basicFBR();
 
     return 0;
 }
