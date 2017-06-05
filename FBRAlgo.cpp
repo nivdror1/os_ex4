@@ -3,6 +3,7 @@
 //
 
 #include <algorithm>
+#include <zconf.h>
 #include "FBRAlgo.h"
 
 /**
@@ -12,8 +13,21 @@
  **/
 FBRAlgo::FBRAlgo(int blocks_num,size_t size, double f_old , double f_new ):
         CacheAlgorithm(blocks_num,size){
-    _sizeOfNewSection = (int)(blocks_num/f_new);
-    _sizeOfOldSection = (int)(blocks_num/f_old);
+    _sizeOfNewSection = (int)(blocks_num*f_new);
+    _sizeOfOldSection = (int)(blocks_num*f_old);
+
+    //define an iterator for the node of the end of the old section
+    auto endOfOldSection = orderedCache.begin();
+    std::advance(endOfOldSection, _sizeOfOldSection);
+    _endOfOldSection = endOfOldSection;
+
+    //define an iterator for the node of the end of the middle section
+    int middleSectionSize = numberOfBlocks - _sizeOfNewSection - _sizeOfOldSection;
+    if (middleSectionSize > 0){
+        _hasMiddle =true;
+        _endOfMiddleSection = _endOfOldSection;
+        std::advance(_endOfMiddleSection, middleSectionSize);
+    }
 }
 
 FBRAlgo::~FBRAlgo(){
@@ -27,33 +41,25 @@ FBRAlgo::~FBRAlgo(){
  * @return a pair that consist of the fd and the block number
  */
 void FBRAlgo::eraseMinimum(){
-    auto endOfOldSection = orderedCache.begin();
-    // todo poor running time (O(n)) since there is no random access iterator in list
-    std::advance(endOfOldSection, _sizeOfOldSection);
+
     // todo ugly code, but with extern struct you cannot use cacheBuffer and it's critical
-    auto minBlock = std::min_element(orderedCache.begin(), endOfOldSection,
-    [this](const BLOCK_ID& left , const BLOCK_ID&right){
+    auto compare = [this](const BLOCK_ID& left , const BLOCK_ID& right){
         return cacheBuffer.at(left)->getCount() < cacheBuffer.at(right)->getCount();
-    });
+    };
+    auto minBlock = std::min_element(orderedCache.begin(), _endOfOldSection, compare);
+
+    cacheBuffer.at(*_endOfOldSection)->setState(State::Old);
+    // change last element in middle section state to middle
+    if (_hasMiddle){
+        cacheBuffer.at(*_endOfMiddleSection)->setState(State::Middle);
+    }
+
     //search and delete it from the cache map
     auto searchedBlock = cacheBuffer.find(*minBlock);
-    // todo do we need this if? if we get here this block must be in cache
-    if(searchedBlock!=cacheBuffer.end()){
-        delete searchedBlock->second;
-        cacheBuffer.erase(searchedBlock);
-    }
+    delete searchedBlock->second;
+    cacheBuffer.erase(searchedBlock);
     //remove from the ordered cache list
     orderedCache.erase(minBlock);
-    // todo need to update one block state from new to middle and one from middle to old, very inconvenient without random access to specific cells.
-    cacheBuffer.at(*endOfOldSection)->setState(State::Old);
-    // advance iterator to last element in middle section and change his state to middle
-    int middleSectionSize = numberOfBlocks - _sizeOfNewSection - _sizeOfOldSection;
-    if (middleSectionSize > 0){
-        std::advance(endOfOldSection, middleSectionSize);
-        cacheBuffer.at(*endOfOldSection)->setState(State::Middle);
-    }
-
-
 }
 
 

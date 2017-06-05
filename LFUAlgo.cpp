@@ -128,10 +128,13 @@ int LFUAlgo::read(int fd,int currentBlockNumber, void* currentBlockBuffer,size_t
  */
 std::list<BLOCK_ID> LFUAlgo::getOrderedCache(){
     std::list<BLOCK_ID> orderedCache;
-    std::sort(cacheBuffer.begin(),cacheBuffer.end(),CompareItemsByFrequentlyUsed());
+    auto compare = [this](const BLOCK_ID& left , const BLOCK_ID& right){
+        return cacheBuffer.at(left)->getCount() < cacheBuffer.at(right)->getCount();
+    };
     for(auto curItem: cacheBuffer){
         orderedCache.push_back(curItem.first);
     }
+    orderedCache.sort(compare);
     return orderedCache;
 }
 

@@ -26,6 +26,12 @@ private:
 
     int _sizeOfNewSection;
 
+    std::list<BLOCK_ID>::iterator _endOfOldSection;
+
+    std::list<BLOCK_ID>::iterator _endOfMiddleSection;
+
+    bool _hasMiddle = false;
+
     /**
      * when there is hit, read a block or a part of it from the cache
      * and relocated the block id to the end of list

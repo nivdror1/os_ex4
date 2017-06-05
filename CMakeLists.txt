@@ -3,5 +3,5 @@ project(os_ex4)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 ")
 
-set(SOURCE_FILES Search.cpp )
+set(SOURCE_FILES TEST.cpp FBRAlgo.cpp CacheFS.cpp CacheAlgorithm.cpp Block.cpp LFUAlgo.cpp LRUAlgo.cpp)
 add_executable(os_ex4 ${SOURCE_FILES})

@@ -13,7 +13,6 @@
 struct Student {
 	bool isOld;
 };
-typedef
 
 int main(){
 	std::map<std::pair<int,int>,Student> oldStudentList;
