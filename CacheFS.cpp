@@ -486,7 +486,7 @@ int CacheFS_print_stat (const char *log_path){
 			logFile.open(resolvedPath, std::ofstream::app);
 
 			logFile<< "Hits number: "<< algorithm->getNumberOfHits()<<std::endl;
-			logFile<< "Misses number: " << algorithm->getNumberOfMisses();
+			logFile<< "Misses number: " << algorithm->getNumberOfMisses()<<std::endl;
 
 			logFile.close();
 			return 0;

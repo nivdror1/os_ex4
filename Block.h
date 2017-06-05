@@ -17,7 +17,7 @@ class Block {
 private:
 
     /** The content of the block. */
-    void* _blockInfo;
+    char* _blockInfo;
 
     /** Number of references for this block. */
     unsigned int _count;

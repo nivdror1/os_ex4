@@ -10,7 +10,8 @@
  * @param blocks_num the number of blocks in the cache
  * @param blockSize the block size
  */
-CacheAlgorithm::CacheAlgorithm(int blocks_num,size_t size):numberOfBlocks(blocks_num), blockSize(size){}
+CacheAlgorithm::CacheAlgorithm(int blocks_num,size_t size):numberOfHits(0), numberOfMisses(0),
+                                                           numberOfBlocks(blocks_num), blockSize(size) {}
 
 /**
  * get the number of hits

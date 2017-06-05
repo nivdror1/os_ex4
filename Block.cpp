@@ -17,7 +17,7 @@
 Block::Block(void* blockInfo, size_t blockSize, int currentBlockNumber ,int fd) :
         _count(1), _currentBlockNumber(currentBlockNumber), _fd(fd), _state(New)
 { //todo i had passec the fd for lseek (to get the size of file) and for fstat
-    _blockInfo = aligned_alloc(blockSize, blockSize); //todo do we really need to use aligned alloc
+    _blockInfo = (char*)aligned_alloc(blockSize, blockSize); //todo do we really need to use aligned alloc
     memcpy(_blockInfo, blockInfo, blockSize);
 }
 
@@ -59,7 +59,7 @@ int Block::getPartOfBlockContent(void *buffer, off_t offset, size_t count)
     else {
         numberOfReadBytes = std::min(((_currentBlockNumber+1)*st.st_blksize)-offset, (off_t)count);
     }
-    memcpy(buffer, _blockInfo, (size_t)numberOfReadBytes);
+    memcpy(buffer, _blockInfo + (offset%st.st_blksize), (size_t)numberOfReadBytes);
     return (int)numberOfReadBytes;
 }
 
