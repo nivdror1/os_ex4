@@ -42,7 +42,7 @@ private:
 protected:
 
 	/** number of blocks in the cache*/
-	int numberOfBlocks;
+	unsigned int numberOfBlocks;
 
 	/**
 	 * the block size
@@ -92,7 +92,7 @@ public:
 	 * get the number of blocks in the cache
 	 * @return return the number of blocks in the cache
 	 */
-    int getNumberOfBlocks();
+    unsigned int getNumberOfBlocks();
 
 	/**
 	 * increment the number of hits

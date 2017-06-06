@@ -435,6 +435,7 @@ int CacheFS_print_cache (const char *log_path){
 			// receiving a vector that contains the absPath and
 			// the number of the block by the order of the algorithm
 			auto cacheBlocks = algorithm->getOrderedCache();
+			cacheBlocks.reverse();
 			//print the cache info
 			for (auto iter = cacheBlocks.begin(); iter != cacheBlocks.end(); iter++) {
 				 int index =isFileCurrentlyOpen((*iter).first);
@@ -483,7 +484,7 @@ Notes:
  */
 int CacheFS_print_stat (const char *log_path){
 	char* resolvedPath= (char *) malloc(sizeof(char) * MAX_CHAR_NUMBER);
-	if(isPathValid(log_path, resolvedPath, false)!= -1) {
+	if(isPathValid(log_path, resolvedPath, false)) {
 		//create the ofstream
 		std::ofstream logFile;
 		logFile.exceptions(std::ofstream::failbit | std::ofstream::badbit);

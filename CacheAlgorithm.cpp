@@ -47,6 +47,6 @@ void CacheAlgorithm::incrementNumberOfMisses(){
  * get the number of blocks in the cache
  * @return return the number of blocks in the cache
  */
-int CacheAlgorithm::getNumberOfBlocks(){
+unsigned int CacheAlgorithm::getNumberOfBlocks(){
     return this->numberOfBlocks;
 }

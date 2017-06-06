@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <zconf.h>
+#include <iostream>
 #include "FBRAlgo.h"
 
 /**
@@ -36,24 +37,51 @@ FBRAlgo::~FBRAlgo(){
     }
 }
 
+void FBRAlgo::updateLastOldSectionItem(int remainingOldSectionSize){
+
+    if(cacheBuffer.size()>=numberOfBlocks - _sizeOfOldSection) {
+        //define an iterator for the node of the end of the old section
+        auto endOfOldSection = orderedCache.begin();
+        if(remainingOldSectionSize > 0){
+            std::advance(endOfOldSection, remainingOldSectionSize);
+        }
+        _endOfOldSection = endOfOldSection;
+        cacheBuffer.at(*_endOfOldSection)->setState(State::Old);
+    }
+
+}
+
+void FBRAlgo::updateLastMiddleSectionItem(int remainingOldSectionSize, int middleSectionSize, int remainingMiddleSectionSize){
+    //define an iterator for the node of the end of the middle section
+
+    if (middleSectionSize > 0 && cacheBuffer.size() >= _sizeOfNewSection){
+        _endOfMiddleSection = orderedCache.begin();
+        if(remainingMiddleSectionSize > 0){
+            std::advance(_endOfMiddleSection, remainingOldSectionSize + middleSectionSize);
+        }
+
+        // change last element in middle section state to middle
+        cacheBuffer.at(*_endOfMiddleSection)->setState(State::Middle);
+    }
+}
+
+void FBRAlgo::changeState() {
+    int middleSectionSize = numberOfBlocks - _sizeOfNewSection - _sizeOfOldSection;
+    int remainingOldSectionSize = (int)cacheBuffer.size() -_sizeOfNewSection  - middleSectionSize;
+    int remainingMiddleSectionSize = (int)cacheBuffer.size() -_sizeOfNewSection- remainingOldSectionSize;
+
+    updateLastOldSectionItem(remainingOldSectionSize);
+    updateLastMiddleSectionItem(remainingOldSectionSize, middleSectionSize, remainingMiddleSectionSize);
+
+
+}
+
 /**
  * find the minimum block that is saved in the cache in order to remove it
  * @return a pair that consist of the fd and the block number
  */
 void FBRAlgo::eraseMinimum(){
 
-    //define an iterator for the node of the end of the old section
-    auto endOfOldSection = orderedCache.begin();
-    std::advance(endOfOldSection, _sizeOfOldSection);
-    _endOfOldSection = endOfOldSection;
-
-    //define an iterator for the node of the end of the middle section
-    int middleSectionSize = numberOfBlocks - _sizeOfNewSection - _sizeOfOldSection;
-    if (middleSectionSize > 0){
-        _hasMiddle =true;
-        _endOfMiddleSection = orderedCache.begin();
-        std::advance(_endOfMiddleSection, _sizeOfOldSection + middleSectionSize);
-    }
 
     // todo ugly code, but with extern struct you cannot use cacheBuffer and it's critical
     auto compare = [this](const BLOCK_ID& left , const BLOCK_ID& right){
@@ -61,11 +89,6 @@ void FBRAlgo::eraseMinimum(){
     };
     auto minBlock = std::min_element(orderedCache.begin(), _endOfOldSection, compare);
 
-    cacheBuffer.at(*_endOfOldSection)->setState(State::Old);
-    // change last element in middle section state to middle
-    if (middleSectionSize > 0){
-        cacheBuffer.at(*_endOfMiddleSection)->setState(State::Middle);
-    }
 
     //search and delete it from the cache map
     auto searchedBlock = cacheBuffer.find(*minBlock);
@@ -107,6 +130,11 @@ int FBRAlgo::hitCache(BLOCK_ID currentBlockId, size_t count,void* currentBlockBu
                                      orderedCache.end(), currentBlockId);
     orderedCache.erase(searchedBlockId);
     orderedCache.push_back(currentBlockId);
+//    std::cout<<"this is the block id:"<< currentBlockId.first<<" "<<currentBlockId.second<<std::endl;
+//    for(auto curItem: orderedCache){
+//        std::cout<<curItem.first<<"  "<<curItem.second<<std::endl;
+//    }
+//    std::cout<<std::endl;
     // todo should a block need to know that state issue? since it's only use for FBR
     if (block->getState() != State::New){
         block->incrementCount();
@@ -129,9 +157,12 @@ int FBRAlgo::hitCache(BLOCK_ID currentBlockId, size_t count,void* currentBlockBu
  */
 int FBRAlgo::missCache(BLOCK_ID currentBlockId ,size_t count ,Block* block,
                        off_t offset,void *currentBlockBuffer ){
+
+
     if(cacheBuffer.size()==getNumberOfBlocks()){
         eraseMinimum();
     }
+    changeState();
 
     incrementNumberOfMisses();
 
@@ -146,6 +177,12 @@ int FBRAlgo::missCache(BLOCK_ID currentBlockId ,size_t count ,Block* block,
     }
     cacheBuffer.insert(std::make_pair(currentBlockId,block));
     orderedCache.push_back(currentBlockId);
+
+//    std::cout<<"this is the block id:"<< currentBlockId.first<<" "<<currentBlockId.second<<std::endl;
+//    for(auto curItem: orderedCache){
+//        std::cout<<curItem.first<<"  "<<curItem.second<<std::endl;
+//    }
+//    std::cout<<std::endl;
 
     return block->getPartOfBlockContent(currentBlockBuffer,offset,count);
 }

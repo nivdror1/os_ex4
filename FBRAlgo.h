@@ -22,9 +22,9 @@ private:
      */
     std::list<BLOCK_ID> orderedCache;
 
-    int _sizeOfOldSection;
+    unsigned int _sizeOfOldSection;
 
-    int _sizeOfNewSection;
+    unsigned int _sizeOfNewSection;
 
     std::list<BLOCK_ID>::iterator _endOfOldSection;
 
@@ -55,6 +55,12 @@ private:
      */
     int missCache(BLOCK_ID currentBlockId ,size_t count ,Block* block,
                   off_t offset,void *currentBlockBuffer);
+
+    void updateLastOldSectionItem(int remainingOldSectionSize);
+
+    void updateLastMiddleSectionItem(int remainingOldSectionSize, int middleSectionSize, int remainingMiddleSectionSize);
+
+    void changeState();
 
 public:
     /**
