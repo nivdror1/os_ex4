@@ -6,21 +6,21 @@
 #define OS_EX4_CACHEFILE_H
 
 
-#include "Block.h"
 #include <vector>
 #include <map>
 #include <sys/types.h>
 
 class CacheFile {
 private:
-	/** a container of the of blocks currently in the cache*/
-	std::map<int,Block> fileBlocks;
 
 	/** the file descriptor*/
-	int fd;
+	int _fd;
 
     /** the absolute path of the file*/
-	std::string absPath;
+	char* absPath;
+
+	/** number of current refernce to the file */
+	unsigned int _referenceCount;
 
 public:
 
@@ -41,27 +41,15 @@ public:
 	 * get the the file descriptor
 	 * @return return the file descriptor
 	 */
-	int getFd();
+	int getFd() const;
 
-	/**
-	 * check if a block exists on the cache
-	 * @param blockNumber the number of the block
-	 * @return return true if such block exists else return false
-	 */
-	bool isBlockExists(int blockNumber);
+    unsigned int getReferenceCount() const;
 
-	/**
-	 * remove block from the vector fileBlocks
-	 * @param blockNumber the number of the block
-	 */
-	bool removeBlock(int blockNumber);
+	char *getAbsPath() const;
 
-	/**
-	 * append a block to the vector fileBlocks
-	 * @param block a new block to be appended to the vector
-	 * @param blockNumber the number of the block
-	 */
-	void appendBlock(Block block, int blockNumber);
+	void incrementReferenceCount();
+
+    void decrementReferenceCount();
 
 };
 

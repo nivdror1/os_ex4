@@ -21,13 +21,17 @@
 #define MAX_CHAR_NUMBER 256
 
 
-std::vector<std::pair<int, char *> >openedFiles;
+std::map<int, CacheFile *> openedFiles;
+
+std::map<int, int> fakeFDtoFD;
 
 void* copyBuffer;
 
 size_t blockSize;
 
 CacheAlgorithm* algorithm;
+
+int fakeFDCounter;
 
 
 
@@ -68,9 +72,9 @@ int getAbsolutePath(const char *pathname,char *resolvedPath ){
  * @return on success return the fd else return -1
  */
 int isFileCurrentlyOpen(std::string absPath){
-	for(unsigned int i=0;i<openedFiles.size();i++){
-		if(absPath==openedFiles.at(i).second){
-			return openedFiles.at(i).first;
+	for(auto iter = openedFiles.begin(); iter != openedFiles.end(); ++iter){
+		if(absPath == (*iter).second->getAbsPath()){
+			return (*iter).first;
 		}
 	}
 	return -1;
@@ -105,17 +109,17 @@ int isDirectory(const char *path) {
 }
 
 /**
- * check whether if the file is allready open
- * @param fd the file descriptor
- * @return on success return the location of the fd in the opened files vector, else return -1
+ * check whether if the file is already open
+ * @param fd the fake file descriptor
+ * @return on success return file that match to this fake file descreptor, and NULL if this file
+ * is closed
  */
-int isFileCurrentlyOpen(int fd){
-	for(unsigned int i=0;i<openedFiles.size();i++){
-		if(fd==openedFiles.at(i).first){
-			return i;
-		}
-	}
-	return -1;
+CacheFile* getFileFromFD(int fd){
+    auto searchedBlock = fakeFDtoFD.find(fd);
+    if(searchedBlock != fakeFDtoFD.end()){
+        return openedFiles.at(searchedBlock->second);
+    }
+    return nullptr;
 }
 
 /**
@@ -193,6 +197,7 @@ int CacheFS_init(int blocks_num, cache_algo_t cache_algo,
 	struct stat fi;
 	stat("/tmp", &fi);
 	blockSize = (size_t)fi.st_blksize;
+    fakeFDCounter = 2;
 	if ((copyBuffer = malloc(blockSize)) == NULL){
 		//todo error
 		return -1;
@@ -277,11 +282,22 @@ int CacheFS_open(const char *pathname){
 		    //open the file and append the fd and the absPath to the openedFiles vector
 		    fd = open(resolvedPath,O_RDONLY | O_DIRECT | O_SYNC);
 		    if(fd !=-1) {
-			    openedFiles.push_back(std::make_pair(fd, resolvedPath));
+			    openedFiles[fd] = new CacheFile(fd, resolvedPath);
+                fakeFDCounter++;
+                fakeFDtoFD[fakeFDCounter] = fd;
 		    }
+			else {
+				// todo error
+			}
 		    return fd;
 	    }
-	    return curFile;
+        else {
+            // the file is already open, return fake FD and add to map FakeFDtoFD
+			openedFiles.at(curFile)->incrementReferenceCount();
+            fakeFDCounter++;
+            fakeFDtoFD[fakeFDCounter] = curFile;
+            return fakeFDCounter;
+        }
     }else{
         return -1;
     }
@@ -301,11 +317,16 @@ int CacheFS_open(const char *pathname){
  */
 int CacheFS_close(int file_id){
 	//check if the file is already open
-    int curFile = isFileCurrentlyOpen(file_id);
-	if(curFile!=-1){
-		//close the file and remove it from the openedFiles vector
-		close(file_id);
-		openedFiles.erase(openedFiles.begin()+curFile);
+    CacheFile* curFile = getFileFromFD(file_id);
+	if(curFile != nullptr){
+        curFile->decrementReferenceCount();
+        fakeFDtoFD.erase(file_id);
+        if (curFile->getReferenceCount() == 0){
+            //close the file and remove it from the openedFiles vector
+            close(curFile->getFd());
+            openedFiles.erase(curFile->getFd());
+            delete curFile;
+        }
 		return 0;
 	}
 	return -1;
@@ -355,16 +376,16 @@ int offsetToBlockNumber(off_t offset){
 				[Note: any value of count is valid.]
  */
 int CacheFS_pread(int file_id, void *buf, size_t count, off_t offset){
-	int curIndex=isFileCurrentlyOpen(file_id);
+	CacheFile* curFile = getFileFromFD(file_id);
 	int currentBlockNumber = offsetToBlockNumber(offset);
     int totalBytes = 0, currentBlockBytes = 0;
 	struct stat st;
 	fstat(file_id,&st);
 
-	if (curIndex != -1 && buf != NULL && currentBlockNumber >=0){
+	if (curFile != nullptr && buf != NULL && currentBlockNumber >=0){
 
 
-		off_t  fileSize= lseek(file_id,0,SEEK_END);
+		off_t fileSize = lseek(curFile->getFd(),0,SEEK_END);
 
 		if(fileSize< offset){
 
@@ -372,8 +393,8 @@ int CacheFS_pread(int file_id, void *buf, size_t count, off_t offset){
 		}
 		while(count !=0 && offset+totalBytes!=fileSize){
 			void *currentBlockBuffer =aligned_alloc(st.st_blksize,st.st_blksize);
-			currentBlockBytes = algorithm->read(file_id, currentBlockNumber, currentBlockBuffer,
-			                                    count,offset+totalBytes);
+			currentBlockBytes = algorithm->read(curFile->getFd(), currentBlockNumber, curFile->getAbsPath(),
+                                                currentBlockBuffer, count,offset+totalBytes);
 			if(currentBlockBytes==-1){
 				return -1;
 			}
@@ -437,9 +458,9 @@ int CacheFS_print_cache (const char *log_path){
 			auto cacheBlocks = algorithm->getOrderedCache();
 			cacheBlocks.reverse();
 			//print the cache info
-			for (auto iter = cacheBlocks.begin(); iter != cacheBlocks.end(); iter++) {
-				 int index =isFileCurrentlyOpen((*iter).first);
-				logFile << openedFiles[index].second << " " << (*iter).second<<std::endl;
+			for (auto iter = cacheBlocks.begin(); iter != cacheBlocks.end(); ++iter) {
+                char* path = algorithm->getBlockFromCache((*iter).first, (*iter).second)->get_absPath();
+				logFile << path << " " << (*iter).second<<std::endl;
 			}
 			logFile.close();
 			return 0;

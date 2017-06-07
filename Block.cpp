@@ -14,8 +14,8 @@
  * @param blockInfo the content of this block
  * @param blockOffset The relative starting offset of the block.
  */
-Block::Block(void* blockInfo, size_t blockSize, int currentBlockNumber ,int fd) :
-        _count(1), _currentBlockNumber(currentBlockNumber), _fd(fd), _state(New)
+Block::Block(void* blockInfo, size_t blockSize, int currentBlockNumber ,int fd, char* absPath) :
+        _count(1), _currentBlockNumber(currentBlockNumber), _fd(fd), _absPath(absPath),_state(New)
 { //todo i had passec the fd for lseek (to get the size of file) and for fstat
     _blockInfo = (char*)aligned_alloc(blockSize, blockSize); //todo do we really need to use aligned alloc
     memcpy(_blockInfo, blockInfo, blockSize);
@@ -79,4 +79,9 @@ State Block::getState() const
 void Block::setState(State state)
 {
     Block::_state = state;
+}
+
+char *Block::get_absPath() const
+{
+    return _absPath;
 }

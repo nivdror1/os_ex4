@@ -11,58 +11,39 @@
  * @param absolutePath the absolute path of the file
  * @return an object of CacheFile
  */
-CacheFile::CacheFile(int fd, char *absolutePath):fd(fd){
+CacheFile::CacheFile(int fd, char *absolutePath):_fd(fd), _referenceCount(1){
 	this->absPath = absolutePath;
 }
 
 /**
  * a d-tor
  */
-CacheFile::~CacheFile(){
-	for(unsigned int i = 0; i< this->fileBlocks.size();i++){
-		delete(fileBlocks.at(i));
-	}
-	//todo free the absPath? char* -> std::string
-}
+CacheFile::~CacheFile(){}
 
 /**
  * get the the file descriptor
  * @return return the file descriptor
  */
-int CacheFile::getFd(){
-	return fd;
+int CacheFile::getFd() const{
+	return _fd;
 }
 
-/**
- * check if a block exists on the cache
- * @param blockNumber the number of the block
- * @return return true if such block exists else return false
- */
-bool CacheFile::isBlockExists(int blockNumber){
-	auto it=fileBlocks.find(blockNumber);
-	return it != fileBlocks.end();
+unsigned int CacheFile::getReferenceCount() const
+{
+    return _referenceCount;
 }
 
-/**
- * remove block from the vector fileBlocks
- * @param blockNumber the number of the block
- */
-bool CacheFile::removeBlock(int blockNumber){
-	//search for the block
-	auto it=fileBlocks.find(blockNumber);
-	if(it != fileBlocks.end()){
-		//delete the block and erase it the cachefile
-		delete fileBlocks.at(blockNumber);
-		fileBlocks.erase(blockNumber);
-		return true;
-	}
-	return false;
+void CacheFile::incrementReferenceCount()
+{
+    CacheFile::_referenceCount += 1;
 }
 
-/**
- * append a block to the vector fileBlocks
- * @param blockNumber the number of the block
- */
-void CacheFile::appendBlock(Block block,int blockNumber){
-	fileBlocks.insert(std::make_pair(blockNumber,block));
+void CacheFile::decrementReferenceCount()
+{
+	CacheFile::_referenceCount -= 1;
+}
+
+char *CacheFile::getAbsPath() const
+{
+	return absPath;
 }

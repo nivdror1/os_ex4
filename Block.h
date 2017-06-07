@@ -29,6 +29,8 @@ private:
     /** the file descriptor*/
     int _fd;
 
+    char* _absPath;
+
     /** Flag that shows in which section this block belongs  */
     State _state;
 
@@ -40,7 +42,7 @@ public:
      * @param blockOffset The relative starting offset of the block.
      * @param fd the file descriptor
      */
-    Block(void* blockInfo, size_t blockSize, int currentBlockNumber, int fd);
+    Block(void* blockInfo, size_t blockSize, int currentBlockNumber, int fd, char* absPath);
 
     /**
      * Returns the offset of this block.
@@ -68,6 +70,8 @@ public:
      * @return the current section that this block belongs to.
      */
     State getState() const;
+
+    char *get_absPath() const;
 
     /**
      * Sets the current section that this block belongs to the given state.
