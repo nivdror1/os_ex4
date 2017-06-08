@@ -14,6 +14,8 @@ LRUAlgo.h
 LFUAlgo.cpp
 LFUAlgo.h
 CacheFS.cpp
+CacheFile.h
+CacheFile.cpp
 README
 Makefile
 
