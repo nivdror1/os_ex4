@@ -15,14 +15,14 @@
  */
 CacheFile::CacheFile(int fd, char *absolutePath):_fd(fd), _referenceCount(1){
 	this->absPath = (char*)malloc(strlen(absolutePath)+1);
-	memcpy(absPath,absPath, strlen(absolutePath)+1);
+	memcpy(absPath,absolutePath, strlen(absolutePath)+1);
 }
 
 /**
  * a d-tor
  */
 CacheFile::~CacheFile(){
-	delete absPath;
+	free(absPath);
 }
 
 /**
