@@ -285,11 +285,11 @@ int CacheFS_open(const char *pathname){
 			    openedFiles[fd] = new CacheFile(fd, resolvedPath);
                 fakeFDCounter++;
                 fakeFDtoFD[fakeFDCounter] = fd;
+                return fakeFDCounter;
 		    }
 			else {
 				// todo error
 			}
-		    return fd;
 	    }
         else {
             // the file is already open, return fake FD and add to map FakeFDtoFD
