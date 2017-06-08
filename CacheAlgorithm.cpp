@@ -3,6 +3,7 @@
 //
 
 #include <zconf.h>
+#include <iostream>
 #include "CacheAlgorithm.h"
 
 

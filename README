@@ -111,6 +111,7 @@ then accessing the disk which must be accessed mechanically.
 
 3)
 
+
 4) an example when LRU is better than LFU:
 
 the size of the cache is 4.
