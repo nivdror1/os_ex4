@@ -104,27 +104,33 @@ turnaround time - 11.8 without cs
 
 average wait time - 7.2 without cs
 
-2) yes, it always provide a faster access time than fetching
-from the disk because the heap is located at the main memory.
-the main memory is DRAM and therefore accessing DRAM is much faster
-then accessing the disk which must be accessed mechanically.
+2)
+Yes, it always provide a faster access time than fetching from the disk because the heap is
+located at the main memory.
+The main memory is DRAM and therefore accessing DRAM is much faster then accessing the disk which
+ must be accessed mechanically.
 
 3)
 
-4) an example when LRU is better than LFU:
+4)
+An example when LRU is better than LFU:
 
-the size of the cache is 4.
-initially the user reads the blocks 0,1,2 for a 1000 times.
-then the user reads the block 3,4 for infinity.
+Let the size of the cache be 4.
+Initially the user reads the blocks 0,1,2 for a 1000 times.
+Then the user reads the block 3,4 for infinity.
 
-an example when LFU is better than LRU:
-the size of the cache is 3.
-the reading of the block is - 1,2,2,3,3,3,4,1,2
+An example when LFU is better than LRU:
+Let the size of the cache be 3.
+The reading of the block is - 1,2,2,3,3,3,4,1,2
 
-an example when LFU and LRU  are of no good:
-the size of the cache is 3.
-the reading of the block is - 1,2,3,4,5,6,1,2,3
+An example when LFU and LRU are both not good:
+Let the size of the cache be 3.
+The reading of the block is - 1,2,3,4,5,6,1,2,3
 
+5)
 
-
+The reason for that behaviour is to "factoring out locality", that means that if we have a
+block/file that is very necessary for short period of time, and for any time else we don't mean
+to access it again. So with that kind of file, certain block will have very high number of
+reference - so it get stuck in the cache for a long time, although no one will access it again.
 
