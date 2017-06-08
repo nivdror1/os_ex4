@@ -288,6 +288,7 @@ int CacheFS_open(const char *pathname){
                 return fakeFDCounter;
 		    }
 			else {
+			    return -1;
 				// todo error
 			}
 	    }
