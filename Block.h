@@ -45,6 +45,11 @@ public:
     Block(void* blockInfo, size_t blockSize, int currentBlockNumber, int fd, char* absPath);
 
     /**
+     * d-tor
+     */
+    ~Block();
+
+    /**
      * Returns the offset of this block.
      * @return the offset of this block.
      */

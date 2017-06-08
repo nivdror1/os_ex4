@@ -8,6 +8,7 @@
 #include <sys/stat.h>
 #include <algorithm>
 #include <zconf.h>
+#include <malloc.h>
 
 /**
  * Constructor
@@ -15,13 +16,21 @@
  * @param blockOffset The relative starting offset of the block.
  */
 Block::Block(void* blockInfo, size_t blockSize, int currentBlockNumber ,int fd, char* absPath) :
-        _count(1), _currentBlockNumber(currentBlockNumber), _fd(fd), _absPath(absPath),_state(New)
+        _count(1), _currentBlockNumber(currentBlockNumber), _fd(fd),_state(New)
 { //todo i had passec the fd for lseek (to get the size of file) and for fstat
     _blockInfo = (char*)aligned_alloc(blockSize, blockSize); //todo do we really need to use aligned alloc
     memcpy(_blockInfo, blockInfo, blockSize);
+    this->_absPath = (char*)malloc(strlen(absPath)+1);
+    memcpy(_absPath,absPath, strlen(absPath)+1);
 }
 
-
+/**
+ * d-tor
+ */
+Block::~Block() {
+    free(_blockInfo);
+    free(_absPath);
+}
 /**
  * Returns the offset of this block.
  * @return the offset of this block.

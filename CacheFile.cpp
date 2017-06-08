@@ -2,6 +2,8 @@
 // Created by nivdror1 on 5/24/17.
 //
 
+#include <cstring>
+#include <malloc.h>
 #include "CacheFile.h"
 
 
@@ -12,13 +14,16 @@
  * @return an object of CacheFile
  */
 CacheFile::CacheFile(int fd, char *absolutePath):_fd(fd), _referenceCount(1){
-	this->absPath = absolutePath;
+	this->absPath = (char*)malloc(strlen(absolutePath)+1);
+	memcpy(absPath,absPath, strlen(absolutePath)+1);
 }
 
 /**
  * a d-tor
  */
-CacheFile::~CacheFile(){}
+CacheFile::~CacheFile(){
+	delete absPath;
+}
 
 /**
  * get the the file descriptor

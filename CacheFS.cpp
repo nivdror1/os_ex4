@@ -273,7 +273,7 @@ int CacheFS_destroy(){
  */
 int CacheFS_open(const char *pathname){
     char* resolvedPath= (char *) malloc(sizeof(char) * MAX_CHAR_NUMBER); // todo error
-	int fd,curFile;
+	int fd,curFile, finalFd;
 	//get the absolute path and check if the file is in tmp directory
     if(isPathValid(pathname, resolvedPath, true)){
 	    //check if the file is already open
@@ -285,11 +285,10 @@ int CacheFS_open(const char *pathname){
 			    openedFiles[fd] = new CacheFile(fd, resolvedPath);
                 fakeFDCounter++;
                 fakeFDtoFD[fakeFDCounter] = fd;
-                return fakeFDCounter;
+                finalFd = fakeFDCounter;
 		    }
 			else {
-			    return -1;
-				// todo error
+			    finalFd = -1;
 			}
 	    }
         else {
@@ -297,11 +296,13 @@ int CacheFS_open(const char *pathname){
 			openedFiles.at(curFile)->incrementReferenceCount();
             fakeFDCounter++;
             fakeFDtoFD[fakeFDCounter] = curFile;
-            return fakeFDCounter;
+            finalFd =  fakeFDCounter;
         }
     }else{
-        return -1;
+        finalFd =  -1;
     }
+	free(resolvedPath);
+	return finalFd;
 }
 
 
@@ -388,13 +389,13 @@ int CacheFS_pread(int file_id, void *buf, size_t count, off_t offset){
 
 
 		off_t fileSize = lseek(curFile->getFd(),0,SEEK_END);
-
+		void *currentBlockBuffer =aligned_alloc(st.st_blksize,st.st_blksize);
 		if(fileSize< offset){
 
 			return 0;
 		}
 		while(count !=0 && offset+totalBytes!=fileSize){
-			void *currentBlockBuffer =aligned_alloc(st.st_blksize,st.st_blksize);
+
 			currentBlockBytes = algorithm->read(curFile->getFd(), currentBlockNumber, curFile->getAbsPath(),
                                                 currentBlockBuffer, count,offset+totalBytes);
 			if(currentBlockBytes==-1){
@@ -405,6 +406,7 @@ int CacheFS_pread(int file_id, void *buf, size_t count, off_t offset){
             totalBytes += currentBlockBytes;
 			count-= currentBlockBytes;
 		}
+		free(currentBlockBuffer);
         return totalBytes;
 	}
 	return -1;
@@ -447,6 +449,7 @@ Notes:
 		2. log_path is invalid.
  */
 int CacheFS_print_cache (const char *log_path){
+	int result = 0;
 	char* resolvedPath= (char *) malloc(sizeof(char) * MAX_CHAR_NUMBER);
 	if(isPathValid(log_path, resolvedPath, false)) {
 		//create the ofstream
@@ -461,17 +464,20 @@ int CacheFS_print_cache (const char *log_path){
 			cacheBlocks.reverse();
 			//print the cache info
 			for (auto iter = cacheBlocks.begin(); iter != cacheBlocks.end(); ++iter) {
-                char* path = algorithm->getBlockFromCache((*iter).first, (*iter).second)->get_absPath();
+				char *path = algorithm->getBlockFromCache((*iter).first, (*iter).second)->get_absPath();
 				logFile << path << " " << (*iter).second
-                        <<std::endl;
+				        << std::endl;
 			}
 			logFile.close();
-			return 0;
+			result = 0;
 		} catch (std::ofstream::failure e) {
-			return -1;
+			result = -1;
 		}
+	}else{
+		result  = -1;
 	}
-	return -1;
+	free(resolvedPath);
+	return result;
 }
 
 
@@ -507,6 +513,7 @@ Notes:
 		2. log_path is invalid.
  */
 int CacheFS_print_stat (const char *log_path){
+	int result = 0;
 	char* resolvedPath= (char *) malloc(sizeof(char) * MAX_CHAR_NUMBER);
 	if(isPathValid(log_path, resolvedPath, false)) {
 		//create the ofstream
@@ -520,10 +527,13 @@ int CacheFS_print_stat (const char *log_path){
 			logFile<< "Misses number: " << algorithm->getNumberOfMisses()<<std::endl;
 
 			logFile.close();
-			return 0;
+			result = 0;
 		} catch (std::ofstream::failure e) {
-			return -1;
+			result = -1;
 		}
+	}else{
+		result = -1;
 	}
-	return -1;
+	free(resolvedPath);
+	return result;
 }
