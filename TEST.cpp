@@ -436,7 +436,7 @@ void basicFBR()
     CacheFS_init(10, FBR, 0.3, 0.3);
     int fd1 = CacheFS_open("/tmp/FBR1.txt");
     int fd2 = CacheFS_open("/tmp/FBR2.txt");
-    char data[11];
+    char data[11]="\0";
 
     CacheFS_pread(fd1, &data, 10, 0*blockSize);
     CacheFS_pread(fd1, &data, 10, 0*blockSize); // This should not help the 0 block and it should be removed in the end!
@@ -743,14 +743,14 @@ void stressTest()
 
 int main()
 {
-    sanityCheck();
-    doubleOpenClose();
-    offsetTooBig();
-    basicLRU();
-    basicLFU();
+//    sanityCheck();
+//    doubleOpenClose();
+//    offsetTooBig();
+//    basicLRU();
+//    basicLFU();
     basicFBR();
-    readSeveralBlocksAtOnce();
-    stressTest();
+//    readSeveralBlocksAtOnce();
+//    stressTest();
 
     return 0;
 }

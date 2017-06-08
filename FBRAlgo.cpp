@@ -131,10 +131,11 @@ Block* FBRAlgo::getBlockFromCache(int fd, int currentBlockNumber) const{
 }
 
 void FBRAlgo::updateCacheAfterMiss(){
+	changeState();
     if(cacheBuffer.size()==getNumberOfBlocks()){
         eraseMinimum();
     }
-    changeState();
+
 }
 
 
