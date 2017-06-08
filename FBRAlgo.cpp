@@ -39,7 +39,7 @@ FBRAlgo::~FBRAlgo(){
 
 void FBRAlgo::updateLastOldSectionItem(int remainingOldSectionSize){
 
-    if(cacheBuffer.size()>=numberOfBlocks - _sizeOfOldSection) {
+    if(cacheBuffer.size() >= numberOfBlocks - _sizeOfOldSection) {
         //define an iterator for the node of the end of the old section
         auto endOfOldSection = orderedCache.begin();
         if(remainingOldSectionSize > 0){
@@ -101,6 +101,10 @@ void FBRAlgo::updateCacheAfterHit(BLOCK_ID currentBlockId){
 
     auto searchedBlockId = std::find(orderedCache.begin(),
                                      orderedCache.end(), currentBlockId);
+    Block* currentBlock = cacheBuffer.at(*searchedBlockId);
+    if (currentBlock->getState() != State::New){
+        currentBlock->incrementCount();
+    }
     orderedCache.erase(searchedBlockId);
     orderedCache.push_back(currentBlockId);
 }

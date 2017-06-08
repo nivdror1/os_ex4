@@ -272,7 +272,7 @@ int CacheFS_destroy(){
 			   "/tmp" due to the use of NFS in the Aquarium.
  */
 int CacheFS_open(const char *pathname){
-    char* resolvedPath= (char *) malloc(sizeof(char) * MAX_CHAR_NUMBER);
+    char* resolvedPath= (char *) malloc(sizeof(char) * MAX_CHAR_NUMBER); // todo error
 	int fd,curFile;
 	//get the absolute path and check if the file is in tmp directory
     if(isPathValid(pathname, resolvedPath, true)){
@@ -375,6 +375,7 @@ int offsetToBlockNumber(off_t offset){
 				    like posix's pread does.]
 				[Note: any value of count is valid.]
  */
+
 int CacheFS_pread(int file_id, void *buf, size_t count, off_t offset){
 	CacheFile* curFile = getFileFromFD(file_id);
 	int currentBlockNumber = offsetToBlockNumber(offset);
@@ -460,7 +461,8 @@ int CacheFS_print_cache (const char *log_path){
 			//print the cache info
 			for (auto iter = cacheBlocks.begin(); iter != cacheBlocks.end(); ++iter) {
                 char* path = algorithm->getBlockFromCache((*iter).first, (*iter).second)->get_absPath();
-				logFile << path << " " << (*iter).second<<std::endl;
+				logFile << path << " " << (*iter).second
+                        <<std::endl;
 			}
 			logFile.close();
 			return 0;
