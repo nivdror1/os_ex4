@@ -131,8 +131,7 @@ CacheFile* getFileFromFD(int fd){
  */
 bool isPathValid(const char *path, char *resolvedPath, bool flag){
 	if(getAbsolutePath(path,resolvedPath) != -1) {
-		std::string temp = resolvedPath;
-		if (flag && temp.find("/tmp/") == std::string::npos){
+		if (flag && strncmp(resolvedPath, "/tmp/", 5) != 0){
 			return false;
 		}
 		if (isRegularFile(resolvedPath) != 0) {
