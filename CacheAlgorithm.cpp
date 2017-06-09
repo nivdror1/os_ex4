@@ -56,7 +56,7 @@ unsigned int CacheAlgorithm::getNumberOfBlocks(){
 /**
  * when there is hit, read a block or a part of it from the cache
  * and relocated the block id to the end of list
- * @param currentBlockId the file descrioptor and the block number
+ * @param currentBlockId the file descriptor and the block number
  * @param count count how many bytes to be read
  * @param currentBlockBuffer the current buffer
  * @param block a block object
@@ -64,8 +64,7 @@ unsigned int CacheAlgorithm::getNumberOfBlocks(){
  * @return the number of bytes read
  */
 int CacheAlgorithm::hitCache(BLOCK_ID currentBlockId, size_t count,void* currentBlockBuffer ,
-                             Block * block,
-                             off_t offset) {
+                             Block * block, off_t offset) {
     updateCacheAfterHit(currentBlockId);
 
     incrementNumberOfHits(); //increment the hit number
@@ -73,6 +72,9 @@ int CacheAlgorithm::hitCache(BLOCK_ID currentBlockId, size_t count,void* current
     return block->getPartOfBlockContent(currentBlockBuffer, offset, count);
 }
 
+/**
+ * Checks if the cache if full, if so remove the minimum element from it.
+ */
 void CacheAlgorithm::updateCacheAfterMiss(){
     if(cacheBuffer.size()==getNumberOfBlocks()){
         eraseMinimum();
@@ -81,14 +83,14 @@ void CacheAlgorithm::updateCacheAfterMiss(){
 
 
 /**
- * when there is a miss, if the cache is full erase the minimum.
- * read the block from the disk into the cache, and fill the current
+ * when there is a miss, if the cache is full erase the minimum element in such case.
+ * Read the block from the disk into the cache, and fill the current
  * @param currentBlockId the file descriptor and the block number
  * @param count count how many bytes to be read
- * @param block block a block object
+ * @param absPath the absolute path of the file
  * @param offset offset the offset to begin reading
- * @param fileInfo a stat object represented the file info
- * @return the number of bytes read
+ * @param currentBlockBuffer a buffer to read to.
+ * @return the number of bytes that actually have been read
  */
 int CacheAlgorithm::missCache(BLOCK_ID currentBlockId ,size_t count ,char* absPath,
                               off_t offset,void *currentBlockBuffer ){
@@ -106,7 +108,7 @@ int CacheAlgorithm::missCache(BLOCK_ID currentBlockId ,size_t count ,char* absPa
         block = new Block(currentBlockBuffer,blockSize, currentBlockId.second,currentBlockId
                 .first, absPath);
     }catch (std::bad_alloc e){
-        //todo error maybe throw exception
+        return -1;
     }
 
     insertNewBlockToCache(currentBlockId,block);
@@ -115,7 +117,7 @@ int CacheAlgorithm::missCache(BLOCK_ID currentBlockId ,size_t count ,char* absPa
 }
 
 /**
- * search the cache for the block, if found return the block
+ * Scans the cache to find the block that match to the given file descriptor and block number.
  * @param fd the file descriptor
  * @param currentBlockNumber the current block to be read
  * @return upon success return the block , else return nullptr
@@ -130,14 +132,15 @@ Block* CacheAlgorithm::getBlockFromCache(int fd, int currentBlockNumber) const{
 }
 
 /**
- * search for the block in the cache, if the block is in the cache read from it
- * else, remove a block from the cache, and read the block from the disk
+ * Scans the cache to find the block, if the block is in the cache read from it
+ * otherwise, remove a block from the cache, read the block from the disk and insert it to the
+ * cache.
  * @param fd the file descriptor
  * @param currentBlockNumber the current block to be read
+ * @param absPath the absolute path of the file
  * @param currentBlockBuffer the current buffer
  * @param offset the offset to begin reading
  * @param count how many bytes to be read
- * @param fileInfo a stat object represented the file info
  * @return the number of bytes read
  */
 int CacheAlgorithm::read(int fd,int currentBlockNumber, char* absPath ,void* currentBlockBuffer,

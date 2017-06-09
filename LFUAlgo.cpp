@@ -33,11 +33,19 @@ void LFUAlgo::eraseMinimum(){
     }
 }
 
+/**
+ * Updates the relevant elements in cache after an hit occurred.
+*/
 void LFUAlgo::updateCacheAfterHit(BLOCK_ID currentBlockId){
     auto searchedBlock = cacheBuffer.find(currentBlockId);
     (*searchedBlock).second->incrementCount();
 }
 
+/**
+ * Inserts the given block with given details to the cache.
+ * @param currentBlockId  pair of file descriptor and block number
+ * @param block the block to insert to the cache
+ */
 void LFUAlgo::insertNewBlockToCache(BLOCK_ID currentBlockId,Block* block){
     cacheBuffer.insert(std::pair<BLOCK_ID,Block*> (currentBlockId,block));
 }

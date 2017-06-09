@@ -19,18 +19,35 @@ private:
      */
     std::list<BLOCK_ID> orderedCache;
 
+    /** maximum number of elements in old section. */
     unsigned int _sizeOfOldSection;
 
+    /** maximum number of elements in new section. */
     unsigned int _sizeOfNewSection;
 
+    /** iterator that points to the element next to the last element in old section. */
     std::list<BLOCK_ID>::iterator _endOfOldSection;
 
+    /** iterator that points to the element next to the last element in middle section. */
     std::list<BLOCK_ID>::iterator _endOfMiddleSection;
 
+    /**
+     * Updates the state of the last element that enters to the old section.
+     * @param remainingOldSectionSize number of elements in the old section
+     */
     void updateLastOldSectionItem(int remainingOldSectionSize);
 
+    /**
+     * Updates the state of the last element that enters to the middle section.
+     * @param remainingOldSectionSize number of elements in old section
+     * @param middleSectionSize maximum number of elements in middle section
+     * @param remainingMiddleSectionSize number of elements in middle section
+     */
     void updateLastMiddleSectionItem(int remainingOldSectionSize, int middleSectionSize, int remainingMiddleSectionSize);
 
+    /**
+     * Updates the states of new elements in old and middle section
+     */
     void changeState();
 
 public:
@@ -55,10 +72,21 @@ public:
 	*/
     void eraseMinimum();
 
+    /**
+     * Updates the relevant elements in cache after an hit occurred.
+	*/
     void updateCacheAfterHit(BLOCK_ID currentBlockId);
 
+    /**
+     * Checks if the cache if full, if so remove the minimum element from it.
+     */
     void updateCacheAfterMiss();
 
+    /**
+     * Inserts the given block with given details to the cache.
+     * @param currentBlockId  pair of file descriptor and block number
+     * @param block the block to insert to the cache
+     */
     void insertNewBlockToCache(BLOCK_ID currentBlockId,Block* block);
 
     /**
