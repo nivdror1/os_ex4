@@ -20,30 +20,72 @@
 
 #define MAX_CHAR_NUMBER 256
 
-
+/** a map consisting of a file descriptor and a object of the file*/
 std::map<int, CacheFile *> openedFiles;
 
+/** a map between the fakeFd and the actual fd*/
 std::map<int, int> fakeFDtoFD;
 
-void* copyBuffer;
-
+/** the block size given by the os*/
 size_t blockSize;
 
+/** the cache algorithm */
 CacheAlgorithm* algorithm;
 
+/** the counter of the fake fd*/
 int fakeFDCounter;
 
-
+/**
+ * get the directory of the given path
+ * @param path the path to the file
+ * @return return a string that encapsulates the directory of the path
+ */
 std::string getDirectory(const char* path){
 	std::string temp = path;
 	std::size_t found = temp.find_last_of('/');
 	return temp.substr(0,found+1); //todo it contain the '/'
 }
 
+/**
+ * get the file name of the given path
+ * @param path the path to the file
+ * @return return a string that encapsulates the file name of the path
+ */
 std::string getFileName(const char* path){
 	std::string temp = path;
 	std::size_t found = temp.find_last_of('/');
 	return temp.substr(found+1,std::string::npos);
+}
+
+/**
+ * get the absolute path from a soft link
+ * @param pathname the original pathname which represent a symbolic link
+ * @param resolvedPath the absolute path
+ * @return return the absolute path
+ */
+int getAbsPathFromASoftLink(const char *pathname, char *resolvedPath ){
+    // get the absolute path from a symbolic link
+    if (readlink(pathname, resolvedPath, 256) == -1) {
+        return -1;
+    }
+    std::string realPath = getDirectory(pathname) + resolvedPath;
+    memcpy(resolvedPath, realPath.c_str(),256);
+    return 0;.
+}
+
+/**
+ * get the absolute path from a regular file
+ * @param pathname the original pathname which represent a relative path
+ * @param resolvedPath the absolute path
+ * @return return the absolute path
+ */
+int getAbsPathFromARegularFile(const char *pathname, char *resolvedPath ){
+    // get the absolute path from a relative path
+    realpath(pathname, resolvedPath);
+    if (resolvedPath == nullptr) {
+        return -1;
+    }
+    return 0;
 }
 
 /**
@@ -56,32 +98,21 @@ int getAbsolutePath(const char *pathname, char *resolvedPath ){
     struct stat buf;
     int result = 0;
     //check if the pathname is a Symbolic link
-    if(lstat(pathname,&buf)!=-1 ) {
+    if(lstat(pathname,&buf) != -1 ) {
         if (S_ISLNK(buf.st_mode)) {
-            // get the absolute path from a symbolic link
-            if (readlink(pathname, resolvedPath, 256) == -1) {
-                result--;
-            }
-	        std::string realPath = getDirectory(pathname) + resolvedPath;
-	        memcpy(resolvedPath, realPath.c_str(),256);
-
+            result = getAbsPathFromASoftLink(pathname, resolvedPath);
         }else {
-	        //todo do i need to find out whether this is a regular file
-	        // get the absolute path from a relative path
-	        realpath(pathname, resolvedPath);
-	        if (resolvedPath == nullptr) {
-		        result--;
-	        }
+	        result = getAbsPathFromARegularFile(pathname, resolvedPath);
         }
     }
     else{
-        result--;
+        result = -1;
     }
     return result;
 }
 
 /**
- * check whether if the file is allready open
+ * check whether if the file is already open
  * @param absPath the absolute path
  * @return on success return the fd else return -1
  */
@@ -125,7 +156,7 @@ int isDirectory(const char *path) {
 /**
  * check whether if the file is already open
  * @param fd the fake file descriptor
- * @return on success return file that match to this fake file descreptor, and NULL if this file
+ * @return on success return file that match to this fake file descriptor, and NULL if this file
  * is closed
  */
 CacheFile* getFileFromFD(int fd){
@@ -153,6 +184,7 @@ bool isPathValid(const char *path, char *resolvedPath, bool flag){
 			return true;
 		}
 	} else {
+        //this is a case of opening a logFile when the file doesn't exists
 		std::string dir = getDirectory(path);
 		std::string fileName = getFileName(path);
 		//check if the directory is valid
@@ -203,28 +235,19 @@ bool isPathValid(const char *path, char *resolvedPath, bool flag){
 int CacheFS_init(int blocks_num, cache_algo_t cache_algo,
                  double f_old , double f_new  ){
     if (blocks_num <= 0){
-        // todo error
         return -1;
     }
-	struct stat fi;
-	stat("/tmp", &fi);
-	blockSize = (size_t)fi.st_blksize;
     fakeFDCounter = 2;
-	if ((copyBuffer = malloc(blockSize)) == NULL){
-		//todo error
-		return -1;
-	}
     if (cache_algo == cache_algo_t::FBR){
         if (f_new + f_old > 1 || f_new < 0 || f_old < 0 || f_old > 1 || f_new > 1 ){
-            // todo error
 	        return -1;
         }
 	    algorithm = new FBRAlgo(blocks_num, blockSize, f_old, f_new);
     }
-	if(cache_algo==LRU){
+	else if(cache_algo==LRU){
 		algorithm = new LRUAlgo(blocks_num, blockSize);
 	}
-	if(cache_algo == LFU){
+	else{
 		algorithm = new LFUAlgo(blocks_num, blockSize);
 	}
 
@@ -249,9 +272,46 @@ int CacheFS_init(int blocks_num, cache_algo_t cache_algo,
 	The function will fail if a system call or a library function fails.
 */
 int CacheFS_destroy(){
-    free(copyBuffer);
     delete algorithm;
     return 0;
+}
+
+/**
+ * open a new file , adding it to the openedFiles map by creating a new cacheFile object,
+ * and adding the fakeFd to the fakeFDtoFD map so it be connected to the real fd
+ * @param resolvedPath  the absolute path of the file
+ * @return upon success return the fakeFd else return -1
+ */
+int openANewFile(char * resolvedPath){
+    //open the file
+    int fd = open(resolvedPath,O_RDONLY | O_DIRECT | O_SYNC);
+    if(fd !=-1) {
+        //insert the file to the openedFiles map
+        try{
+            openedFiles[fd] = new CacheFile(fd, resolvedPath);
+        }catch(std::bad_alloc e){
+            return -1;
+        }
+        // increase fakeFd counter and add it to the fakeFDtoFD map
+        fakeFDCounter++;
+        fakeFDtoFD[fakeFDCounter] = fd;
+        return fakeFDCounter;
+    }
+    return -1;
+}
+
+/**
+ * increase the reference count of the file, increase the fakeFd counter
+ * and insert the fakeFD to fakeFDtoFD map
+ * @param curFile the real fd
+ * @return the fakeFD
+ */
+int updateAnOldFile(int curFile){
+    // the file is already open, return fake FD and add to map FakeFDtoFD
+    openedFiles.at(curFile)->incrementReferenceCount();
+    fakeFDCounter++;
+    fakeFDtoFD[fakeFDCounter] = curFile;
+    return fakeFDCounter;
 }
 
 /**
@@ -284,31 +344,20 @@ int CacheFS_destroy(){
 			   "/tmp" due to the use of NFS in the Aquarium.
  */
 int CacheFS_open(const char *pathname){
-    char* resolvedPath= (char *) malloc(sizeof(char) * MAX_CHAR_NUMBER); // todo error
-	int fd,curFile, finalFd;
+    char* resolvedPath= (char *) malloc(sizeof(char) * MAX_CHAR_NUMBER);
+    if(resolvedPath == NULL){
+        return -1;
+    }
+	int curFile, finalFd;
 	//get the absolute path and check if the file is in tmp directory
     if(isPathValid(pathname, resolvedPath, true)){
 	    //check if the file is already open
 	    curFile = isFileCurrentlyOpen(resolvedPath);
 	    if(curFile == -1){
-		    //open the file and append the fd and the absPath to the openedFiles vector
-		    fd = open(resolvedPath,O_RDONLY | O_DIRECT | O_SYNC);
-		    if(fd !=-1) {
-			    openedFiles[fd] = new CacheFile(fd, resolvedPath);
-                fakeFDCounter++;
-                fakeFDtoFD[fakeFDCounter] = fd;
-                finalFd = fakeFDCounter;
-		    }
-			else {
-			    finalFd = -1;
-			}
+		    finalFd = openANewFile(resolvedPath);
 	    }
         else {
-            // the file is already open, return fake FD and add to map FakeFDtoFD
-			openedFiles.at(curFile)->incrementReferenceCount();
-            fakeFDCounter++;
-            fakeFDtoFD[fakeFDCounter] = curFile;
-            finalFd =  fakeFDCounter;
+            finalFd = updateAnOldFile(curFile);
         }
     }else{
         finalFd =  -1;
@@ -333,8 +382,10 @@ int CacheFS_close(int file_id){
 	//check if the file is already open
     CacheFile* curFile = getFileFromFD(file_id);
 	if(curFile != nullptr){
+        // decrease the reference and erase it from the fakeFDtoFD map
         curFile->decrementReferenceCount();
         fakeFDtoFD.erase(file_id);
+        // close the file and delete the CacheFile object
         if (curFile->getReferenceCount() == 0){
             //close the file and remove it from the openedFiles vector
             close(curFile->getFd());
@@ -356,6 +407,48 @@ int offsetToBlockNumber(off_t offset){
         return -1;
     }
     return (int)(offset/blockSize);
+}
+
+/**
+ * read from the file/cache block each block at a time until reached the count
+ * @param count how many bytes to read
+ * @param offset from where to begin reading the file
+ * @param fileSize the size of the file
+ * @param curFile a CacheFile object
+ * @param currentBlockNumber the number of the block in reference to the file
+ * @param buf the buffer that will be read from the file
+ * @param file_id the file descriptor
+ * @return return the number of bytes that was read
+ */
+int readFromAFile(size_t count, off_t offset, off_t fileSize,
+                    CacheFile * curFile, int currentBlockNumber , void* buf , int file_id ){
+    int totalBytes = 0;
+    int currentBlockBytes = 0;
+    struct stat st;
+    if(fstat(file_id,&st) != -1) {
+        //allocate the size of a block
+        void *currentBlockBuffer = aligned_alloc(st.st_blksize, st.st_blksize);
+        if (currentBlockBuffer != NULL) {
+            //while the count isn't zero the size of the file hasn't been reached
+            while (count != 0 && offset + totalBytes != fileSize) {
+                //read using of the cache algorithm
+                currentBlockBytes = algorithm->read(curFile->getFd(), currentBlockNumber, curFile->getAbsPath(),
+                                                    currentBlockBuffer, count, offset + totalBytes);
+                if (currentBlockBytes == -1) {
+                    return -1;
+                }
+                //save the block in the buf
+                currentBlockNumber++;
+                memcpy((char *) buf + totalBytes, currentBlockBuffer, (size_t) currentBlockBytes);
+                totalBytes += currentBlockBytes;
+                count -= currentBlockBytes;
+            }
+            free(currentBlockBuffer);
+            return totalBytes;
+        }
+    }
+    return -1;
+
 }
 
 /**
@@ -393,37 +486,73 @@ int offsetToBlockNumber(off_t offset){
 int CacheFS_pread(int file_id, void *buf, size_t count, off_t offset){
 	CacheFile* curFile = getFileFromFD(file_id);
 	int currentBlockNumber = offsetToBlockNumber(offset);
-    int totalBytes = 0, currentBlockBytes = 0;
-	struct stat st;
-	fstat(file_id,&st);
 
 	if (curFile != nullptr && buf != NULL && currentBlockNumber >=0){
-
-
+        // figure out the size of the file
 		off_t fileSize = lseek(curFile->getFd(),0,SEEK_END);
-		void *currentBlockBuffer =aligned_alloc(st.st_blksize,st.st_blksize);
-		if(fileSize< offset){
-
+        //if the size of the file is smaller than the offset than there is nothing to read
+		if(fileSize< offset ){
 			return 0;
-		}
-		while(count !=0 && offset+totalBytes!=fileSize){
-
-			currentBlockBytes = algorithm->read(curFile->getFd(), currentBlockNumber, curFile->getAbsPath(),
-                                                currentBlockBuffer, count,offset+totalBytes);
-			if(currentBlockBytes==-1){
-				return -1;
-			}
-            currentBlockNumber++;
-            memcpy((char*)buf + totalBytes, currentBlockBuffer, (size_t)currentBlockBytes);
-            totalBytes += currentBlockBytes;
-			count-= currentBlockBytes;
-		}
-		free(currentBlockBuffer);
-        return totalBytes;
+		}else if(fileSize != -1) {
+            //read from the file
+            return readFromAFile(count, offset, fileSize, curFile, currentBlockNumber, buf, file_id);
+        }
 	}
 	return -1;
 }
 
+/**
+ * write to the log file all of the blocks that in the cache by the order of the cache algorithm dictates
+ * in each block shall be printed the follows: the path of the file and the number of the block
+ * @param resolvedPath the log file path
+ * @return upon success return 0 , else return -1
+ */
+int printCacheToTheLog( char* resolvedPath ){
+    //create the ofstream
+    std::ofstream logFile;
+    logFile.exceptions(std::ofstream::failbit | std::ofstream::badbit);
+    try {
+        //open the log file in order to be written
+        logFile.open(resolvedPath, std::ofstream::app);
+        // receiving a vector that contains the absPath and
+        // the number of the block by the order of the algorithm
+        auto cacheBlocks = algorithm->getOrderedCache();
+        cacheBlocks.reverse();
+        //print the cache info
+        for (auto iter = cacheBlocks.begin(); iter != cacheBlocks.end(); ++iter) {
+            char *path = algorithm->getBlockFromCache((*iter).first, (*iter).second)->get_absPath();
+            logFile << path << " " << (*iter).second
+                    << std::endl;
+        }
+        logFile.close();
+        return 0;
+    } catch (std::ofstream::failure e) {
+        return -1;
+    }
+}
+
+/**
+ * write to the log file the number of hits and the number of misses
+ * @param resolvedPath the log file path
+ * @return upon success return 0 , else return -1
+ */
+int printStatsToTheLog( char* resolvedPath ){
+    //create the ofstream
+    std::ofstream logFile;
+    logFile.exceptions(std::ofstream::failbit | std::ofstream::badbit);
+    try {
+        //open the log file in order to be written
+        logFile.open(resolvedPath, std::ofstream::app);
+
+        logFile<< "Hits number: "<< algorithm->getNumberOfHits()<<std::endl;
+        logFile<< "Misses number: " << algorithm->getNumberOfMisses()<<std::endl;
+
+        logFile.close();
+        return 0;
+    } catch (std::ofstream::failure e) {
+        return -1;
+    }
+}
 
 /**
 This function writes the current state of the cache to a file.
@@ -463,33 +592,19 @@ Notes:
 int CacheFS_print_cache (const char *log_path){
 	int result = 0;
 	char* resolvedPath= (char *) malloc(sizeof(char) * MAX_CHAR_NUMBER);
-	if(isPathValid(log_path, resolvedPath, false)) {
-		//create the ofstream
-		std::ofstream logFile;
-		logFile.exceptions(std::ofstream::failbit | std::ofstream::badbit);
-		try {
-			//open the log file in order to be written
-			logFile.open(resolvedPath, std::ofstream::app);
-			// receiving a vector that contains the absPath and
-			// the number of the block by the order of the algorithm
-			auto cacheBlocks = algorithm->getOrderedCache();
-			cacheBlocks.reverse();
-			//print the cache info
-			for (auto iter = cacheBlocks.begin(); iter != cacheBlocks.end(); ++iter) {
-				char *path = algorithm->getBlockFromCache((*iter).first, (*iter).second)->get_absPath();
-				logFile << path << " " << (*iter).second
-				        << std::endl;
-			}
-			logFile.close();
-			result = 0;
-		} catch (std::ofstream::failure e) {
-			result = -1;
-		}
-	}else{
-		result  = -1;
-	}
-	free(resolvedPath);
-	return result;
+    if (resolvedPath!= NULL){
+        if(isPathValid(log_path, resolvedPath, false)) {
+            result = printCacheToTheLog( resolvedPath);
+        }else{
+            result  = -1;
+        }
+        free(resolvedPath);
+        return result;
+    }else{
+        return -1;
+    }
+
+
 }
 
 
@@ -527,25 +642,16 @@ Notes:
 int CacheFS_print_stat (const char *log_path){
 	int result = 0;
 	char* resolvedPath= (char *) malloc(sizeof(char) * MAX_CHAR_NUMBER);
-	if(isPathValid(log_path, resolvedPath, false)) {
-		//create the ofstream
-		std::ofstream logFile;
-		logFile.exceptions(std::ofstream::failbit | std::ofstream::badbit);
-		try {
-			//open the log file in order to be written
-			logFile.open(resolvedPath, std::ofstream::app);
-
-			logFile<< "Hits number: "<< algorithm->getNumberOfHits()<<std::endl;
-			logFile<< "Misses number: " << algorithm->getNumberOfMisses()<<std::endl;
-
-			logFile.close();
-			result = 0;
-		} catch (std::ofstream::failure e) {
-			result = -1;
-		}
-	}else{
-		result = -1;
-	}
-	free(resolvedPath);
-	return result;
+    if(resolvedPath !=NULL){
+        if(isPathValid(log_path, resolvedPath, false)) {
+            result = printStatsToTheLog(resolvedPath);
+        }else{
+            result = -1;
+        }
+        free(resolvedPath);
+        return result;
+    }
+	else{
+        return -1;
+    }
 }
