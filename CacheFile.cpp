@@ -1,6 +1,4 @@
-//
-// Created by nivdror1 on 5/24/17.
-//
+
 
 #include <cstring>
 #include <malloc.h>
@@ -33,21 +31,35 @@ int CacheFile::getFd() const{
 	return _fd;
 }
 
+/**
+ * get the reference count
+ * @return return the reference count
+ */
 unsigned int CacheFile::getReferenceCount() const
 {
     return _referenceCount;
 }
 
+/**
+ * increase the reference count by one
+ */
 void CacheFile::incrementReferenceCount()
 {
     CacheFile::_referenceCount += 1;
 }
 
+/**
+ * decrease the reference count by one
+ */
 void CacheFile::decrementReferenceCount()
 {
 	CacheFile::_referenceCount -= 1;
 }
 
+/**
+ * get the absolute path
+ * @return return the absolute path
+ */
 char *CacheFile::getAbsPath() const
 {
 	return absPath;

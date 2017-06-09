@@ -34,6 +34,17 @@ CacheAlgorithm* algorithm;
 int fakeFDCounter;
 
 
+std::string getDirectory(const char* path){
+	std::string temp = path;
+	std::size_t found = temp.find_last_of('/');
+	return temp.substr(0,found+1); //todo it contain the '/'
+}
+
+std::string getFileName(const char* path){
+	std::string temp = path;
+	std::size_t found = temp.find_last_of('/');
+	return temp.substr(found+1,std::string::npos);
+}
 
 /**
  * get the absolute path whether it's a regular file or a symbolic link
@@ -41,7 +52,7 @@ int fakeFDCounter;
  * @param resolvedPath the absolute path
  * @return return 0 and fill the variable resolvedPath upon succession else return -1
  */
-int getAbsolutePath(const char *pathname,char *resolvedPath ){
+int getAbsolutePath(const char *pathname, char *resolvedPath ){
     struct stat buf;
     int result = 0;
     //check if the pathname is a Symbolic link
@@ -51,6 +62,9 @@ int getAbsolutePath(const char *pathname,char *resolvedPath ){
             if (readlink(pathname, resolvedPath, 256) == -1) {
                 result--;
             }
+	        std::string realPath = getDirectory(pathname) + resolvedPath;
+	        memcpy(resolvedPath, realPath.c_str(),256);
+
         }else {
 	        //todo do i need to find out whether this is a regular file
 	        // get the absolute path from a relative path
@@ -122,6 +136,7 @@ CacheFile* getFileFromFD(int fd){
     return nullptr;
 }
 
+
 /**
  * check if the path exists
  * @param path the path to the file
@@ -138,10 +153,8 @@ bool isPathValid(const char *path, char *resolvedPath, bool flag){
 			return true;
 		}
 	} else {
-		std::string temp = path;
-		std::size_t found = temp.find_last_of('/');
-		std::string dir  = temp.substr(0,found+1); //todo it contain the '/'
-		std::string fileName = temp.substr(found+1,std::string::npos);
+		std::string dir = getDirectory(path);
+		std::string fileName = getFileName(path);
 		//check if the directory is valid
 		if(isDirectory(dir.c_str()) != 0){
 			dir += fileName;
