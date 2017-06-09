@@ -1,6 +1,3 @@
-//
-// Created by nivdror1 on 5/24/17.
-//
 
 #ifndef OS_EX4_BLOCK_H
 #define OS_EX4_BLOCK_H
@@ -22,13 +19,13 @@ private:
     /** Number of references for this block. */
     unsigned int _count;
 
+    /** the number of the current block */
     int _currentBlockNumber;
 
-//    /** Information struct of the file that this block is part of */
-//    struct stat *_fileInfo;
     /** the file descriptor*/
     int _fd;
 
+	/** the absolute path of the file*/
     char* _absPath;
 
     /** Flag that shows in which section this block belongs  */
@@ -76,6 +73,11 @@ public:
      */
     State getState() const;
 
+
+	/**
+	* get the absolute path
+	* @return return the absolute path
+	*/
     char *get_absPath() const;
 
     /**

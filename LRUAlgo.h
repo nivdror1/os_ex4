@@ -1,6 +1,3 @@
-//
-// Created by nivdror1 on 5/24/17.
-//
 
 #ifndef OS_EX4_LRU_H
 #define OS_EX4_LRU_H
@@ -39,8 +36,19 @@ public:
 	*/
     void eraseMinimum();
 
+	/**
+	 * after a hit has occured , update the orderedCache list hence update the cache
+	 * so it will remain sorted. in order to do that we search for the currentBlockId
+	 * and then push it at the back of the list
+	 * @param currentBlockId a file descriptor and the number of block in that file
+	 */
 	void updateCacheAfterHit(BLOCK_ID currentBlockId);
 
+	/**
+	 * insert a block into the cache
+	 * @param currentBlockId a file descriptor and the number of block in that file
+	 * @param block the new inserted block into the cache
+	 */
 	void insertNewBlockToCache(BLOCK_ID currentBlockId,Block* block);
 
 	/**
