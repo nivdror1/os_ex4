@@ -154,3 +154,37 @@ block/file that is very necessary for short period of time, and for any time els
 to access it again. So with that kind of file, certain block will have very high number of
 reference - so it get stuck in the cache for a long time, although no one will access it again.
 
+part two:
+
+1)
+As we saw in class, every access to file demand access to the I-node and directory instructor of
+every directory in the path. With that in mind, the following disk access needed:
+1. Access to the i-node and instructor of the root directory ("\").
+2. Access to the i-node and instructor of os directory.
+3. Access to the i-node of "README" file.
+
+Up until now we get 5 access to the disk, now we need to access the block with the single
+indirect (since we can't access directly after the 40,960 byte), read block's data, write the
+changes we want to do in that block and last update the inode of this file.
+Therefor, we get 9 access to the disk.
+
+2)
+First, we observe that seek and read are system calls, so we get 2 trap software interrupts.
+Second, read function has to access the disk, so when the disk will finish his job it will send
+memory hardware interrupt to notify the os that the job has done.
+Overall we get 3 interrupts.
+
+3)
+a)
+We will use two level feedback queue, where every new jobs that came to the system gets into the
+first queue, that will run Round-Robin algorithm with quantum size=1. Each work that haven't
+finished her job (has to be type 2 job, with running time of 10 seconds) gets into second queue
+that will run SJF with priority and preemption for jobs that just came in to this queue.
+This preemption and priority means that if a new job enters to the first queue, or moves from
+first to second queue, we stop the job that running right now and runs this new job.
+
+b)
+No, the preemption will cause many more context switch than first come first serve algorithm, and
+ more context switch will cause more overhead time.
+ First come first serve will minimize overhead time because in that algorithm there are no
+ context switch at all, hence the CPU always busy only with running process.
