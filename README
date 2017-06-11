@@ -52,21 +52,21 @@ part 1:
 the gantt chart:
 0-2 - p1
 2-4 - p2
-4-6 - p3
-6-8 - p4
-8-9 - p5
-9-11 - p1
-11-12 - p2
-12-14 - p4
-14-16 - p1
-16-18 - p4
-18-20 - p1
-20-21 - p4
-21-23 - p1
+4-6 - p1
+6-7 - p2
+7-9 - p3
+9-11 - p4
+11-13 - p1
+13-14 - p5
+14-16 - p4
+16-18 - p1
+18-20 - p4
+20-22 - p1
+22-23 - p4
 
-turnaround time - 10.8 without cs
+turnaround time - 11.6 without cs
 
-average wait time - 9.6 without cs
+average wait time - 7 without cs
 
 b) first come first serve:
 
@@ -127,10 +127,15 @@ average wait time - 7.2 without cs
 2)
 Yes, it always provide a faster access time than fetching from the disk because the heap is
 located at the main memory.
-The main memory is DRAM and therefore accessing DRAM is much faster then accessing the disk which
- must be accessed mechanically.
+The main memory is DRAM and since accessing DRAM is much faster then accessing the disk (which
+ must be accessed mechanically) we get that this way is better.
 
 3)
+Swapping pages algorithm is managed by the MMU/CPU, in hardware level, and since that it is very
+difficult to run sophisticated algorithms that demands sophisticated data structures so it has to
+use simple clock-oriented algorithms.
+In contrast, managing disk buffer is os's responsibility so we have more possibilities in sense
+of memory and sophisticated data structures.
 
 4)
 An example when LRU is better than LFU:
@@ -141,11 +146,11 @@ Then the user reads the block 3,4 for infinity.
 
 An example when LFU is better than LRU:
 Let the size of the cache be 3.
-The reading of the block is - 1,2,2,3,3,3,4,1,2
+Reading order of the blocks is - 1,2,2,3,3,3,4,1,2
 
 An example when LFU and LRU are both not good:
 Let the size of the cache be 3.
-The reading of the block is - 1,2,3,4,5,6,1,2,3
+Reading order of the blocks is - 1,2,3,4,5,6,1,2,3
 
 5)
 
@@ -164,9 +169,10 @@ every directory in the path. With that in mind, the following disk access needed
 3. Access to the i-node of "README" file.
 
 Up until now we get 5 access to the disk, now we need to access the block with the single
-indirect (since we can't access directly after the 40,960 byte), read block's data, write the
-changes we want to do in that block and last update the inode of this file.
-Therefor, we get 9 access to the disk.
+indirect (6) (since we can't access directly after the 20,480 byte), find the pointer that points to
+40000 byte, read block's data (7), write (8) the changes we want to do in that block and at last
+update (9) the inode of this file.
+Therefore, we get 9 access to the disk.
 
 2)
 First, we observe that seek and read are system calls, so we get 2 trap software interrupts.
