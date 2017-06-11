@@ -59,21 +59,19 @@ int Block::getPartOfBlockContent(void *buffer, off_t offset, size_t count)
 {
     struct stat st;
     if(fstat(this->_fd,&st) != -1){
-	    // get the size of the file
-	    if(off_t fileSize= lseek(_fd,0,SEEK_END)!= -1){
-		    off_t numberOfReadBytes;
-		    //handle the case of the current block is the last block
-		    if ((fileSize/st.st_blksize) == _currentBlockNumber){
-			    numberOfReadBytes = std::min(fileSize-offset, (off_t)count);
-		    }
-		    else {
-			    numberOfReadBytes = std::min(((_currentBlockNumber+1)*st.st_blksize)-offset, (off_t)count);
-		    }
-		    //write the desired content of the block to the buffer
-		    memcpy(buffer, _blockInfo + (offset%st.st_blksize), (size_t)numberOfReadBytes);
-		    return (int)numberOfReadBytes;
-	    }
+        off_t numberOfReadBytes;
+        //handle the case of the current block is the last block
+        if ((st.st_size/st.st_blksize) == _currentBlockNumber){
+            numberOfReadBytes = std::min(st.st_size-offset, (off_t)count);
+        }
+        else {
+            numberOfReadBytes = std::min(((_currentBlockNumber+1)*st.st_blksize)-offset, (off_t)count);
+        }
+        //write the desired content of the block to the buffer
+        memcpy(buffer, _blockInfo + (offset%st.st_blksize), (size_t)numberOfReadBytes);
+        return (int)numberOfReadBytes;
     }
+
 	return -1;
 
 }

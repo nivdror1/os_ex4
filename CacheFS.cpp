@@ -70,7 +70,7 @@ int getAbsPathFromASoftLink(const char *pathname, char *resolvedPath ){
     }
     std::string realPath = getDirectory(pathname) + resolvedPath;
     memcpy(resolvedPath, realPath.c_str(),256);
-    return 0;.
+    return 0;
 }
 
 /**
@@ -232,12 +232,17 @@ bool isPathValid(const char *path, char *resolvedPath, bool flag){
  The cache contains 100 blocks, 33 blocks in the old partition,
  50 in the new partition, and the remaining 17 are in the middle partition.
  */
-int CacheFS_init(int blocks_num, cache_algo_t cache_algo,
-                 double f_old , double f_new  ){
+int CacheFS_init(int blocks_num, cache_algo_t cache_algo, double f_old , double f_new  ){
     if (blocks_num <= 0){
         return -1;
     }
     fakeFDCounter = 2;
+
+    struct stat st;
+    if(stat("/tmp",&st) == -1){
+        return -1;
+    }
+    blockSize = (size_t)st.st_blksize;
     if (cache_algo == cache_algo_t::FBR){
         if (f_new + f_old > 1 || f_new < 0 || f_old < 0 || f_old > 1 || f_new > 1 ){
 	        return -1;
@@ -495,7 +500,8 @@ int CacheFS_pread(int file_id, void *buf, size_t count, off_t offset){
 			return 0;
 		}else if(fileSize != -1) {
             //read from the file
-            return readFromAFile(count, offset, fileSize, curFile, currentBlockNumber, buf, file_id);
+            return readFromAFile(count, offset, fileSize, curFile, currentBlockNumber, buf,
+                                 curFile->getFd());
         }
 	}
 	return -1;
