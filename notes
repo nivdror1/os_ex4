@@ -3,3 +3,8 @@ functions that return errors:
 block:: getPartOfBlockContent
 block::block
 CacheFile::CacheFile
+
+The reason for that behaviour is to "factoring out locality", that means that if we have a
+block/file that is very necessary for short period of time, and for any time else we don't mean
+to access it again. So with that kind of file, certain block will have very high number of
+reference - so it get stuck in the cache for a long time, although no one will access it again.
