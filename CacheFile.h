@@ -1,6 +1,3 @@
-//
-// Created by nivdror1 on 5/24/17.
-//
 
 #ifndef OS_EX4_CACHEFILE_H
 #define OS_EX4_CACHEFILE_H
@@ -43,12 +40,26 @@ public:
 	 */
 	int getFd() const;
 
+	/**
+	 * get the reference count
+	 * @return return the reference count
+	 */
     unsigned int getReferenceCount() const;
 
+	/**
+	 * get the absolute path
+	 * @return return the absolute path
+	 */
 	char *getAbsPath() const;
 
+	/**
+	 * increase the reference count by one
+	 */
 	void incrementReferenceCount();
 
+	/**
+	 * decrease the reference count by one
+	 */
     void decrementReferenceCount();
 
 };

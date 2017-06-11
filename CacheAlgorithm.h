@@ -59,38 +59,45 @@ protected:
 	*/
     virtual void eraseMinimum()=0;
 
-    /**
-	* find the minimum block that is saved in the cache in order to remove it
-	* @return a pair that consist of the fd and the block number
-	*/
+	/**
+     * Updates the relevant elements in cache after an hit occurred.
+    */
     virtual void updateCacheAfterHit(BLOCK_ID currentBlockId)=0;
 
+	/**
+	 * Checks if the cache if full, if so remove the minimum element from it.
+	 */
 	virtual void updateCacheAfterMiss();
 
+	/**
+	 * Insert the given block with given details to the cache.
+	 * @param currentBlockId  pair of file descriptor and block number
+	 * @param block the block to insert to the cache
+	 */
 	virtual void insertNewBlockToCache(BLOCK_ID currentBlockId,Block* block)=0;
 
-
-    /**
-     * when there is hit, read a block or a part of it from the cache
-     * and relocated the block id to the end of list
-     * @param currentBlockId the file descrioptor and the block number
-     * @param count count how many bytes to be read
-     * @param currentBlockBuffer the current buffer
-     * @param block a block object
-     * @param offset offset the offset to begin reading
-     * @return the number of bytes read
-     */
+	/**
+	 * when there is hit, read a block or a part of it from the cache
+	 * and relocated the block id to the end of list
+	 * @param currentBlockId the file descriptor and the block number
+	 * @param count count how many bytes to be read
+	 * @param currentBlockBuffer the current buffer
+	 * @param block a block object
+	 * @param offset offset the offset to begin reading
+	 * @return the number of bytes read
+	 */
     int hitCache(BLOCK_ID currentBlockId, size_t count,void* currentBlockBuffer ,Block * block,off_t offset);
 
-    /**
-     * when there is a miss, if the cache is full erase the minimum.
-     * read the block from the disk into the cache, and fill the current
-     * @param currentBlockId the file descrioptor and the block number
-     * @param count count how many bytes to be read
-     * @param block block a block object
-     * @param offset offset the offset to begin reading
-     * @return the number of bytes read
-     */
+	/**
+	 * when there is a miss, if the cache is full erase the minimum element in such case.
+	 * Read the block from the disk into the cache, and fill the current
+	 * @param currentBlockId the file descriptor and the block number
+	 * @param count count how many bytes to be read
+	 * @param absPath the absolute path of the file
+	 * @param offset offset the offset to begin reading
+	 * @param currentBlockBuffer a buffer to read to.
+	 * @return the number of bytes that actually have been read
+	 */
     int missCache(BLOCK_ID currentBlockId ,size_t count ,char* absPath,
                   off_t offset,void *currentBlockBuffer);
 
@@ -136,7 +143,7 @@ public:
 	 void incrementNumberOfMisses();
 
 	/**
-	 * search the cache for the block, if found return the block
+	 * Scans the cache to find the block that match to the given file descriptor and block number.
 	 * @param fd the file descriptor
 	 * @param currentBlockNumber the current block to be read
 	 * @return upon success return the block , else return nullptr
@@ -144,14 +151,16 @@ public:
 	virtual Block* getBlockFromCache(int fd, int currentBlockNumber)const;
 
 	/**
-	 * search for the block in the cache, if the block is in the cache read from it
-	 * else, remove a block from the cache, and read the block from the disk
-	 * @param fd the file descriptorgetCacheBuffer()
+	 * Scans the cache to find the block, if the block is in the cache read from it
+	 * otherwise, remove a block from the cache, read the block from the disk and insert it to the
+	 * cache.
+	 * @param fd the file descriptor
 	 * @param currentBlockNumber the current block to be read
+	 * @param absPath the absolute path of the file
 	 * @param currentBlockBuffer the current buffer
-	 * @param count the number of bytes to be read
 	 * @param offset the offset to begin reading
-	 * * @return the number of bytes read
+	 * @param count how many bytes to be read
+	 * @return the number of bytes read
 	 */
 	int read(int fd,int currentBlockNumber, char* absPath,void* currentBlockBuffer, size_t count, off_t offset);
 

@@ -1,0 +1,5 @@
+functions that return errors:
+
+block:: getPartOfBlockContent
+block::block
+CacheFile::CacheFile

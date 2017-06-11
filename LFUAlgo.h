@@ -40,8 +40,16 @@ public:
 	*/
     void eraseMinimum();
 
+    /**
+     * Updates the relevant elements in cache after an hit occurred.
+	*/
     void updateCacheAfterHit(BLOCK_ID currentBlockId);
 
+    /**
+     * Inserts the given block with given details to the cache.
+     * @param currentBlockId  pair of file descriptor and block number
+     * @param block the block to insert to the cache
+     */
     void insertNewBlockToCache(BLOCK_ID currentBlockId,Block* block);
 
     /**
