@@ -1,6 +1,6 @@
 CPP= g++ -pthread
 CPPFLAGS= -c -g -Wextra -Wvla -Wall -std=c++11 -DNDEBUG
-TAR_FILES_PART1 = Makefile README CacheFS.cpp Block.h Block.cpp CacheAlgorithm.h CacheAlgorithm.cpp
+TAR_FILES_PART1 = Makefile README Answers.pdf CacheFS.cpp Block.h Block.cpp CacheAlgorithm.h CacheAlgorithm.cpp
 TAR_FILES_PART2 = LRUAlgo.h LRUAlgo.cpp LFUAlgo.h LFUAlgo.cpp FBRAlgo.h FBRAlgo.cpp CacheFile.h CacheFile.cpp
 TAR_FILES= $(TAR_FILES_PART1) $(TAR_FILES_PART2)
 
